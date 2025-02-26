@@ -15,6 +15,25 @@ composer require subster/php-sdk
 
 Work in progress. Not ready for production yet!
 
+## Create checkout session
+
+```php
+$subster = new SubsterConnector('your-api-key');
+
+$session = $subster->checkoutSessions()->create(
+    CreateCheckoutSessionData::from([
+        'customer' => '01jjxr79nzc9wed41d8h2kzxtz',
+        'items' => [
+            [
+                'plan' => 'your-plan-id',
+            ],
+        ],
+        'success_url' => 'https://example.ru/success',
+        'cancel_url' => 'https://example.ru/cancel',
+    ])
+);
+```
+
 # Testing
 ```bash
 composer test
