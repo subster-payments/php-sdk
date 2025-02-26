@@ -1,0 +1,46 @@
+{
+    "name": "subster/php-sdk",
+    "description": "Unofficial PHP SDK for Subster",
+    "keywords" : ["subster", "php", "sdk", "api", "client"],
+    "homepage" : "https://github.com/subster/php-sdk",
+    "license": "MIT",
+    "type": "library",
+    "authors": [
+        {
+            "name": "Subster Development Team",
+            "email": "develop@subster.ru"
+        }
+    ],
+    "require": {
+        "php": "^8.1",
+        "saloonphp/saloon": "^3.0",
+        "nesbot/carbon": "^3.8"
+    },
+    "require-dev": {
+        "pestphp/pest": "^1.22",
+        "laravel/pint": "^1.17",
+        "symfony/var-dumper": "^7.2"
+    },
+    "minimum-stability": "stable",
+    "prefer-stable" : true,
+    "autoload": {
+        "psr-4": {
+            "Subster\\PhpSdk\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Subster\\PhpSdk\\Tests\\": "tests/"
+        }
+    },
+    "config": {
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    },
+    "scripts": {
+        "test" : "./vendor/bin/pest --no-coverage",
+        "test-coverage" : "vendor/bin/pest --coverage-html coverage",
+        "pint" : "./vendor/bin/pint"
+    }
+}
