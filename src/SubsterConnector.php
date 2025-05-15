@@ -8,6 +8,7 @@ use Saloon\Http\Auth\TokenAuthenticator;
 use Saloon\Http\Connector;
 use Saloon\Traits\Plugins\AcceptsJson;
 use Saloon\Traits\Plugins\AlwaysThrowOnErrors;
+use Subster\PhpSdk\Resources\BillingPortalSessionsResource;
 use Subster\PhpSdk\Resources\CheckoutSessionsResource;
 use Subster\PhpSdk\Resources\CustomersResource;
 
@@ -44,5 +45,10 @@ class SubsterConnector extends Connector
     public function checkoutSessions(): CheckoutSessionsResource
     {
         return new CheckoutSessionsResource($this);
+    }
+
+    public function billingPortalSessions(): BillingPortalSessionsResource
+    {
+        return new BillingPortalSessionsResource($this);
     }
 }
