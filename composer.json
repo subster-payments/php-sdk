@@ -17,9 +17,9 @@
         "nesbot/carbon": "^3.8"
     },
     "require-dev": {
-        "pestphp/pest": "^1.22",
+        "pestphp/pest": "^4.0",
         "laravel/pint": "^1.17",
-        "symfony/var-dumper": "^7.2"
+        "symfony/var-dumper": "^8.0"
     },
     "minimum-stability": "stable",
     "prefer-stable" : true,

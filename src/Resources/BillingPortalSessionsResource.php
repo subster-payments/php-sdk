@@ -8,11 +8,8 @@ use Saloon\Exceptions\Request\FatalRequestException;
 use Saloon\Exceptions\Request\RequestException;
 use Saloon\Http\BaseResource;
 use Subster\PhpSdk\DataObjects\BillingPortalSessionData;
-use Subster\PhpSdk\DataObjects\CheckoutSessionData;
 use Subster\PhpSdk\DataObjects\CreateBillingPortalSessionData;
-use Subster\PhpSdk\DataObjects\CreateCheckoutSessionData;
 use Subster\PhpSdk\Requests\CreateBillingPortalSessionRequest;
-use Subster\PhpSdk\Requests\CreateCheckoutSessionRequest;
 
 class BillingPortalSessionsResource extends BaseResource
 {

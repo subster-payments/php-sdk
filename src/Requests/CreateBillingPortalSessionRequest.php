@@ -11,9 +11,7 @@ use Saloon\Http\Response;
 use Saloon\Traits\Body\HasJsonBody;
 use Saloon\Traits\Request\HasConnector;
 use Subster\PhpSdk\DataObjects\BillingPortalSessionData;
-use Subster\PhpSdk\DataObjects\CheckoutSessionData;
 use Subster\PhpSdk\DataObjects\CreateBillingPortalSessionData;
-use Subster\PhpSdk\DataObjects\CreateCheckoutSessionData;
 use Subster\PhpSdk\SubsterConnector;
 
 class CreateBillingPortalSessionRequest extends Request implements HasBody
