@@ -1,6 +1,6 @@
 {
     "name": "subster/php-sdk",
-    "description": "Unofficial PHP SDK for Subster",
+    "description": "Official PHP SDK for Subster",
     "keywords" : ["subster", "php", "sdk", "api", "client"],
     "homepage" : "https://github.com/subster/php-sdk",
     "license": "MIT",
