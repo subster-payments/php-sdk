@@ -37,6 +37,7 @@ class CreateCheckoutSessionRequest extends Request implements HasBody
             'items' => $this->data->items,
             'success_url' => $this->data->success_url,
             ...($this->data->cancel_url ? ['cancel_url' => $this->data->cancel_url] : []),
+            ...($this->data->subscription_data ? ['subscription_data' => $this->data->subscription_data->toArray()] : []),
         ];
     }
 

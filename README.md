@@ -9,7 +9,7 @@ Work in progress. Not ready for production yet!
 Install via composer:
 ```bash
 composer require subster/php-sdk
-````
+```
 
 # Usage
 
@@ -35,6 +35,42 @@ $session = $subster->checkoutSessions()->create(
 );
 ```
 
+## Create a checkout session with a paid trial
+
+```php
+use Subster\PhpSdk\SubsterConnector;
+use Subster\PhpSdk\DataObjects\CheckoutSessionTrialData;
+use Subster\PhpSdk\DataObjects\CheckoutSessionTrialDurationData;
+use Subster\PhpSdk\DataObjects\CreateCheckoutSessionData;
+use Subster\PhpSdk\DataObjects\CreateCheckoutSessionSubscriptionData;
+
+$subster = new SubsterConnector('your-api-key');
+
+$session = $subster->checkoutSessions()->create(
+    CreateCheckoutSessionData::from([
+        'customer' => 'customer-id',
+        'items' => [
+            [
+                'plan' => 'your-recurring-plan-id',
+            ],
+        ],
+        'subscription_data' => CreateCheckoutSessionSubscriptionData::from([
+            'trial' => CheckoutSessionTrialData::from([
+                'amount' => 100,
+                'duration' => CheckoutSessionTrialDurationData::from([
+                    'unit' => 'day',
+                    'count' => 14,
+                ]),
+            ]),
+        ]),
+        'success_url' => 'https://example.ru/success',
+        'cancel_url' => 'https://example.ru/cancel',
+    ])
+);
+```
+
+Allowed trial duration units: `hour`, `day`, `week`, `month`, `year`.
+
 ## Create a billing portal session
 
 ```php
@@ -54,7 +90,7 @@ $session = $subster->billingPortalSessions()->create(
 # Testing
 ```bash
 composer test
-````
+```
 
 ## Changelog
 

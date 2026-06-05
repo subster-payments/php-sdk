@@ -13,5 +13,6 @@ class CreateCheckoutSessionData extends Data
         public readonly array $items,
         public readonly string $success_url,
         public readonly ?string $cancel_url,
+        public readonly ?CreateCheckoutSessionSubscriptionData $subscription_data = null,
     ) {}
 }
