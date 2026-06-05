@@ -87,6 +87,28 @@ $session = $subster->billingPortalSessions()->create(
 );
 ```
 
+## Change a subscription plan
+
+```php
+use Subster\PhpSdk\SubsterConnector;
+use Subster\PhpSdk\DataObjects\ChangeSubscriptionPlanData;
+
+$subster = new SubsterConnector('your-api-key');
+
+$change = $subster->subscriptions()->changePlan(
+    'subscription-id',
+    ChangeSubscriptionPlanData::from([
+        'plan' => 'target-plan-id',
+        'success_url' => 'https://example.ru/success',
+        'cancel_url' => 'https://example.ru/cancel',
+    ])
+);
+
+if ($change->mode === 'checkout') {
+    // Redirect the customer to $change->url.
+}
+```
+
 # Testing
 ```bash
 composer test

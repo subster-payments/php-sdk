@@ -1,0 +1,104 @@
+<?php
+
+declare(strict_types=1);
+
+use Carbon\Carbon;
+use Saloon\Http\Faking\MockClient;
+use Saloon\Http\Faking\MockResponse;
+use Saloon\Http\Request;
+use Subster\PhpSdk\DataObjects\ChangeSubscriptionPlanData;
+use Subster\PhpSdk\DataObjects\SubscriptionPlanChangeData;
+use Subster\PhpSdk\Requests\ChangeSubscriptionPlanRequest;
+use Subster\PhpSdk\SubsterConnector;
+
+it('sends subscription plan change checkout request body', function () {
+    $mockClient = new MockClient([
+        ChangeSubscriptionPlanRequest::class => MockResponse::make([
+            'mode' => 'checkout',
+            'change' => 'change-id',
+            'id' => 'checkout-session-id',
+            'url' => 'https://subster.test/checkout/checkout-session-id',
+            'amount_due' => 4750,
+            'credit_amount' => 250,
+            'effective_at' => '2026-01-16T00:00:00+00:00',
+        ]),
+    ]);
+
+    $connector = new SubsterConnector('test-token', 'https://subster.test/api/v1/');
+    $connector->withMockClient($mockClient);
+
+    $connector->subscriptions()->changePlan('subscription-id', ChangeSubscriptionPlanData::from([
+        'plan' => 'target-plan-id',
+        'success_url' => 'https://example.ru/success',
+        'cancel_url' => 'https://example.ru/cancel',
+    ]));
+
+    $mockClient->assertSent(fn (Request $request): bool => $request instanceof ChangeSubscriptionPlanRequest
+        && $request->resolveEndpoint() === 'subscriptions/subscription-id/change-plan'
+        && $request->body()->all() === [
+            'plan' => 'target-plan-id',
+            'success_url' => 'https://example.ru/success',
+            'cancel_url' => 'https://example.ru/cancel',
+        ]);
+});
+
+it('omits optional checkout urls for scheduled subscription plan changes', function () {
+    $mockClient = new MockClient([
+        ChangeSubscriptionPlanRequest::class => MockResponse::make([
+            'mode' => 'scheduled',
+            'change' => 'change-id',
+            'id' => null,
+            'url' => null,
+            'amount_due' => 0,
+            'credit_amount' => 0,
+            'effective_at' => '2026-02-01T00:00:00+00:00',
+        ]),
+    ]);
+
+    $connector = new SubsterConnector('test-token', 'https://subster.test/api/v1/');
+    $connector->withMockClient($mockClient);
+
+    $connector->subscriptions()->changePlan('subscription-id', ChangeSubscriptionPlanData::from([
+        'plan' => 'target-plan-id',
+    ]));
+
+    $mockClient->assertSent(fn (Request $request): bool => $request instanceof ChangeSubscriptionPlanRequest
+        && $request->body()->all() === [
+            'plan' => 'target-plan-id',
+        ]);
+});
+
+it('returns subscription plan change data from a mocked Saloon response', function () {
+    $mockClient = new MockClient([
+        ChangeSubscriptionPlanRequest::class => MockResponse::make([
+            'mode' => 'checkout',
+            'change' => 'change-id',
+            'id' => 'checkout-session-id',
+            'url' => 'https://subster.test/checkout/checkout-session-id',
+            'amount_due' => 4750,
+            'credit_amount' => 250,
+            'effective_at' => '2026-01-16T00:00:00+00:00',
+        ]),
+    ]);
+
+    $connector = new SubsterConnector('test-token', 'https://subster.test/api/v1/');
+    $connector->withMockClient($mockClient);
+
+    $change = $connector->subscriptions()->changePlan('subscription-id', ChangeSubscriptionPlanData::from([
+        'plan' => 'target-plan-id',
+        'success_url' => 'https://example.ru/success',
+    ]));
+
+    expect($change)
+        ->toBeInstanceOf(SubscriptionPlanChangeData::class)
+        ->and($change->mode)->toBe('checkout')
+        ->and($change->change)->toBe('change-id')
+        ->and($change->id)->toBe('checkout-session-id')
+        ->and($change->url)->toBe('https://subster.test/checkout/checkout-session-id')
+        ->and($change->amount_due)->toBe(4750.0)
+        ->and($change->credit_amount)->toBe(250.0)
+        ->and($change->effective_at)->toBeInstanceOf(Carbon::class)
+        ->and($change->effective_at->toIso8601String())->toBe('2026-01-16T00:00:00+00:00');
+
+    $mockClient->assertSentCount(1, ChangeSubscriptionPlanRequest::class);
+});
