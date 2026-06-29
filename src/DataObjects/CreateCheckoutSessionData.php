@@ -8,6 +8,9 @@ use Subster\PhpSdk\Concerns\Data;
 
 class CreateCheckoutSessionData extends Data
 {
+    /**
+     * @param  array<int, array{plan: string, quantity?: int|null}|CreateCheckoutSessionItemData>  $items
+     */
     public function __construct(
         public readonly string $customer,
         public readonly array $items,

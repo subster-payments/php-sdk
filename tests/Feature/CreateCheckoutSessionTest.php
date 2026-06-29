@@ -9,6 +9,7 @@ use Subster\PhpSdk\DataObjects\CheckoutSessionData;
 use Subster\PhpSdk\DataObjects\CheckoutSessionTrialData;
 use Subster\PhpSdk\DataObjects\CheckoutSessionTrialDurationData;
 use Subster\PhpSdk\DataObjects\CreateCheckoutSessionData;
+use Subster\PhpSdk\DataObjects\CreateCheckoutSessionItemData;
 use Subster\PhpSdk\DataObjects\CreateCheckoutSessionSubscriptionData;
 use Subster\PhpSdk\Requests\CreateCheckoutSessionRequest;
 use Subster\PhpSdk\SubsterConnector;
@@ -48,7 +49,7 @@ it('keeps checkout session request body unchanged without subscription data', fu
             ]);
 });
 
-it('sends paid trial subscription data in checkout session request body', function () {
+it('sends checkout item quantity from raw arrays', function () {
     $mockClient = new MockClient([
         CreateCheckoutSessionRequest::class => MockResponse::make([
             'id' => 'checkout-session-id',
@@ -64,7 +65,112 @@ it('sends paid trial subscription data in checkout session request body', functi
         'items' => [
             [
                 'plan' => 'plan-id',
+                'quantity' => 5,
             ],
+        ],
+        'success_url' => 'https://example.ru/success',
+        'cancel_url' => null,
+    ]));
+
+    $mockClient->assertSent(fn (Request $request): bool => $request instanceof CreateCheckoutSessionRequest
+            && $request->body()->all() === [
+                'customer' => 'customer-id',
+                'items' => [
+                    [
+                        'plan' => 'plan-id',
+                        'quantity' => 5,
+                    ],
+                ],
+                'success_url' => 'https://example.ru/success',
+            ]);
+});
+
+it('omits null checkout item quantity from raw arrays', function () {
+    $mockClient = new MockClient([
+        CreateCheckoutSessionRequest::class => MockResponse::make([
+            'id' => 'checkout-session-id',
+            'url' => 'https://subster.test/checkout/checkout-session-id',
+        ]),
+    ]);
+
+    $connector = new SubsterConnector('test-token', 'https://subster.test/api/v1/');
+    $connector->withMockClient($mockClient);
+
+    $connector->checkoutSessions()->create(CreateCheckoutSessionData::from([
+        'customer' => 'customer-id',
+        'items' => [
+            [
+                'plan' => 'plan-id',
+                'quantity' => null,
+            ],
+        ],
+        'success_url' => 'https://example.ru/success',
+    ]));
+
+    $mockClient->assertSent(fn (Request $request): bool => $request instanceof CreateCheckoutSessionRequest
+            && $request->body()->all() === [
+                'customer' => 'customer-id',
+                'items' => [
+                    [
+                        'plan' => 'plan-id',
+                    ],
+                ],
+                'success_url' => 'https://example.ru/success',
+            ]);
+});
+
+it('sends checkout item quantity from item data objects', function () {
+    $mockClient = new MockClient([
+        CreateCheckoutSessionRequest::class => MockResponse::make([
+            'id' => 'checkout-session-id',
+            'url' => 'https://subster.test/checkout/checkout-session-id',
+        ]),
+    ]);
+
+    $connector = new SubsterConnector('test-token', 'https://subster.test/api/v1/');
+    $connector->withMockClient($mockClient);
+
+    $connector->checkoutSessions()->create(CreateCheckoutSessionData::from([
+        'customer' => 'customer-id',
+        'items' => [
+            CreateCheckoutSessionItemData::from([
+                'plan' => 'plan-id',
+                'quantity' => 5,
+            ]),
+        ],
+        'success_url' => 'https://example.ru/success',
+    ]));
+
+    $mockClient->assertSent(fn (Request $request): bool => $request instanceof CreateCheckoutSessionRequest
+            && $request->body()->all() === [
+                'customer' => 'customer-id',
+                'items' => [
+                    [
+                        'plan' => 'plan-id',
+                        'quantity' => 5,
+                    ],
+                ],
+                'success_url' => 'https://example.ru/success',
+            ]);
+});
+
+it('sends paid trial subscription data in checkout session request body', function () {
+    $mockClient = new MockClient([
+        CreateCheckoutSessionRequest::class => MockResponse::make([
+            'id' => 'checkout-session-id',
+            'url' => 'https://subster.test/checkout/checkout-session-id',
+        ]),
+    ]);
+
+    $connector = new SubsterConnector('test-token', 'https://subster.test/api/v1/');
+    $connector->withMockClient($mockClient);
+
+    $connector->checkoutSessions()->create(CreateCheckoutSessionData::from([
+        'customer' => 'customer-id',
+        'items' => [
+            CreateCheckoutSessionItemData::from([
+                'plan' => 'plan-id',
+            ]),
         ],
         'subscription_data' => CreateCheckoutSessionSubscriptionData::from([
             'trial' => CheckoutSessionTrialData::from([

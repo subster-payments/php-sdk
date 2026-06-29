@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Subster\PhpSdk\Concerns\Data;
 use Subster\PhpSdk\DataObjects\CheckoutSessionTrialData;
 use Subster\PhpSdk\DataObjects\CheckoutSessionTrialDurationData;
+use Subster\PhpSdk\DataObjects\CreateCheckoutSessionItemData;
 use Subster\PhpSdk\DataObjects\CreateCheckoutSessionSubscriptionData;
 
 it('serializes nested data objects', function () {
@@ -79,4 +80,20 @@ it('hydrates nested data objects from arrays', function () {
                 'count' => 14,
             ],
         ]);
+});
+
+it('serializes checkout session items with optional quantity', function () {
+    expect(CreateCheckoutSessionItemData::from([
+        'plan' => 'plan-id',
+        'quantity' => 5,
+    ])->toArray())->toBe([
+        'plan' => 'plan-id',
+        'quantity' => 5,
+    ]);
+
+    expect(CreateCheckoutSessionItemData::from([
+        'plan' => 'plan-id',
+    ])->toArray())->toBe([
+        'plan' => 'plan-id',
+    ]);
 });

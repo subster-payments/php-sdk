@@ -35,6 +35,43 @@ $session = $subster->checkoutSessions()->create(
 );
 ```
 
+## Create a one-time checkout session with quantity
+
+Use `quantity` when the customer buys multiple units of the same price, for example 5 token packs. If `quantity` is omitted, Subster treats the checkout item as quantity `1`.
+
+```php
+use Subster\PhpSdk\SubsterConnector;
+use Subster\PhpSdk\DataObjects\CreateCheckoutSessionData;
+use Subster\PhpSdk\DataObjects\CreateCheckoutSessionItemData;
+
+$subster = new SubsterConnector('your-api-key');
+
+$session = $subster->checkoutSessions()->create(
+    CreateCheckoutSessionData::from([
+        'customer' => 'customer-id',
+        'items' => [
+            CreateCheckoutSessionItemData::from([
+                'plan' => 'your-one-time-plan-id',
+                'quantity' => 5,
+            ]),
+        ],
+        'success_url' => 'https://example.ru/success',
+        'cancel_url' => 'https://example.ru/cancel',
+    ])
+);
+```
+
+Raw arrays are still supported:
+
+```php
+'items' => [
+    [
+        'plan' => 'your-one-time-plan-id',
+        'quantity' => 5,
+    ],
+],
+```
+
 ## Create a checkout session with a paid trial
 
 ```php

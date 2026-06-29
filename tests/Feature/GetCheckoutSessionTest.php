@@ -82,3 +82,45 @@ it('returns completed checkout session event data from a mocked Saloon response'
         ->and($session->event)->toBe('subscription.activated')
         ->and($session->data)->toBe($payload);
 });
+
+it('returns completed one-time checkout session event data from a mocked Saloon response', function () {
+    $payload = [
+        'checkout_session' => 'checkout-session-id',
+        'invoice' => 'invoice-id',
+        'customer' => 'customer-id',
+        'amount' => 400,
+        'currency' => 'RUB',
+        'items' => [
+            [
+                'plan' => 'plan-id',
+                'product_name' => 'Tokens',
+                'type' => 'one_time',
+                'unit_amount' => 80,
+                'quantity' => 5,
+                'amount' => 400,
+            ],
+        ],
+    ];
+
+    $mockClient = new MockClient([
+        GetCheckoutSessionRequest::class => MockResponse::make([
+            'id' => 'checkout-session-id',
+            'status' => 'completed',
+            'event' => 'checkout.session.completed',
+            'data' => $payload,
+        ]),
+    ]);
+
+    $connector = new SubsterConnector('test-token', 'https://subster.test/api/v1/');
+    $connector->withMockClient($mockClient);
+
+    $session = $connector->checkoutSessions()->get('checkout-session-id');
+
+    expect($session)
+        ->toBeInstanceOf(CheckoutSessionStatusData::class)
+        ->and($session->id)->toBe('checkout-session-id')
+        ->and($session->status)->toBe('completed')
+        ->and($session->event)->toBe('checkout.session.completed')
+        ->and($session->data)->toBe($payload)
+        ->and($session->data['items'][0]['quantity'])->toBe(5);
+});
