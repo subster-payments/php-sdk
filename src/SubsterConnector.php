@@ -11,6 +11,7 @@ use Saloon\Traits\Plugins\AlwaysThrowOnErrors;
 use Subster\PhpSdk\Resources\BillingPortalSessionsResource;
 use Subster\PhpSdk\Resources\CheckoutSessionsResource;
 use Subster\PhpSdk\Resources\CustomersResource;
+use Subster\PhpSdk\Resources\InvoicesResource;
 use Subster\PhpSdk\Resources\SubscriptionsResource;
 
 class SubsterConnector extends Connector
@@ -56,5 +57,10 @@ class SubsterConnector extends Connector
     public function subscriptions(): SubscriptionsResource
     {
         return new SubscriptionsResource($this);
+    }
+
+    public function invoices(): InvoicesResource
+    {
+        return new InvoicesResource($this);
     }
 }

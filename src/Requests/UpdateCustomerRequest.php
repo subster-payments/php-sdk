@@ -33,8 +33,8 @@ class UpdateCustomerRequest extends Request implements HasBody
     protected function defaultBody(): array
     {
         return [
-            'name' => $this->when($this->data->name, fn () => $this->data->name),
-            'email' => $this->when($this->data->email, fn () => $this->data->email),
+            ...($this->data->name !== null ? ['name' => $this->data->name] : []),
+            ...($this->data->email !== null ? ['email' => $this->data->email] : []),
         ];
     }
 

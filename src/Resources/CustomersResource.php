@@ -32,7 +32,7 @@ class CustomersResource extends BaseResource
      */
     public function update(UpdateCustomerData $data): CustomerData
     {
-        return $this->connector->debug(die: true)->send(
+        return $this->connector->send(
             new UpdateCustomerRequest($data)
         )->dtoOrFail();
     }

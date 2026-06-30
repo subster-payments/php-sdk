@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Subster\PhpSdk\Concerns\Collection;
 use Subster\PhpSdk\Concerns\Data;
 use Subster\PhpSdk\DataObjects\CheckoutSessionTrialData;
 use Subster\PhpSdk\DataObjects\CheckoutSessionTrialDurationData;
@@ -58,6 +59,51 @@ it('serializes arrays containing nested data objects recursively', function () {
 it('preserves null values when serializing data objects', function () {
     expect(CreateCheckoutSessionSubscriptionData::from()->toArray())->toBe([
         'trial' => null,
+    ]);
+});
+
+it('serializes collections containing nested data objects recursively', function () {
+    $duration = CheckoutSessionTrialDurationData::from([
+        'unit' => 'month',
+        'count' => 1,
+    ]);
+
+    $collection = Collection::make([
+        $duration,
+        ['nested' => $duration],
+    ]);
+
+    $data = new class($collection) extends Data
+    {
+        public function __construct(
+            public readonly Collection $durations,
+        ) {}
+    };
+
+    expect($collection->toArray())->toBe([
+        [
+            'unit' => 'month',
+            'count' => 1,
+        ],
+        [
+            'nested' => [
+                'unit' => 'month',
+                'count' => 1,
+            ],
+        ],
+    ])->and($data->toArray())->toBe([
+        'durations' => [
+            [
+                'unit' => 'month',
+                'count' => 1,
+            ],
+            [
+                'nested' => [
+                    'unit' => 'month',
+                    'count' => 1,
+                ],
+            ],
+        ],
     ]);
 });
 

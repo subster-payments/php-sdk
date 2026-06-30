@@ -74,6 +74,10 @@ class Data
             return $value->toArray();
         }
 
+        if ($value instanceof Collection) {
+            return $value->toArray();
+        }
+
         if (is_array($value)) {
             return array_map(
                 fn (mixed $item): mixed => $this->normalizeValue($item),

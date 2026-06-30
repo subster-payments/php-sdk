@@ -146,6 +146,34 @@ if ($change->mode === 'checkout') {
 }
 ```
 
+## List paid invoices
+
+```php
+use Subster\PhpSdk\SubsterConnector;
+use Subster\PhpSdk\DataObjects\ListInvoicesData;
+
+$subster = new SubsterConnector('your-api-key');
+
+$invoices = $subster->invoices()->all(ListInvoicesData::from([
+    'customer' => 'customer-id',
+    'paid_at_gte' => '2026-01-01',
+    'paid_at_lte' => '2026-01-31',
+    'limit' => 10,
+]));
+
+foreach ($invoices->data as $invoice) {
+    // $invoice->customer, $invoice->subscription, and $invoice->items are included.
+}
+```
+
+If `$invoices->has_more` is true, request the next page with the last invoice id:
+
+```php
+$nextPage = $subster->invoices()->all(ListInvoicesData::from([
+    'starting_after' => $invoices->data->items[array_key_last($invoices->data->items)]->id,
+]));
+```
+
 # Testing
 ```bash
 composer test
