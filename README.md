@@ -72,6 +72,31 @@ Raw arrays are still supported:
 ],
 ```
 
+## Create a usage-based subscription checkout
+
+Usage-based recurring prices require an initial `quantity` for the first checkout invoice. Later renewal invoices use the latest usage snapshot recorded on the subscription.
+
+```php
+use Subster\PhpSdk\SubsterConnector;
+use Subster\PhpSdk\DataObjects\CreateCheckoutSessionData;
+
+$subster = new SubsterConnector('your-api-key');
+
+$session = $subster->checkoutSessions()->create(
+    CreateCheckoutSessionData::from([
+        'customer' => 'customer-id',
+        'items' => [
+            [
+                'plan' => 'your-usage-based-plan-id',
+                'quantity' => 20,
+            ],
+        ],
+        'success_url' => 'https://example.ru/success',
+        'cancel_url' => 'https://example.ru/cancel',
+    ])
+);
+```
+
 ## Create a checkout session with a paid trial
 
 ```php
@@ -146,6 +171,27 @@ if ($change->mode === 'checkout') {
 }
 ```
 
+## Record a subscription usage snapshot
+
+Use `recordUsage` for usage-based recurring subscriptions. The `quantity` is the current absolute usage snapshot, not a delta.
+
+```php
+use Subster\PhpSdk\SubsterConnector;
+use Subster\PhpSdk\DataObjects\RecordSubscriptionUsageEventData;
+
+$subster = new SubsterConnector('your-api-key');
+
+$event = $subster->subscriptions()->recordUsage(
+    'subscription-id',
+    RecordSubscriptionUsageEventData::from([
+        'quantity' => 20,
+        'occurred_at' => '2026-01-16T10:30:00+00:00',
+        'idempotency_key' => 'tenant-users-2026-01-16',
+        'metadata' => ['source' => 'tenant-admin'],
+    ])
+);
+```
+
 ## List paid invoices
 
 ```php
@@ -165,6 +211,8 @@ foreach ($invoices->data as $invoice) {
     // $invoice->customer, $invoice->subscription, and $invoice->items are included.
 }
 ```
+
+Invoice items expose nullable `$item->pricing_model`. For usage-based renewal invoices, item metadata may include the backend meter details and the usage snapshot used for billing.
 
 If `$invoices->has_more` is true, request the next page with the last invoice id:
 

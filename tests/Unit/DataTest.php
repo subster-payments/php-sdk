@@ -8,6 +8,7 @@ use Subster\PhpSdk\DataObjects\CheckoutSessionTrialData;
 use Subster\PhpSdk\DataObjects\CheckoutSessionTrialDurationData;
 use Subster\PhpSdk\DataObjects\CreateCheckoutSessionItemData;
 use Subster\PhpSdk\DataObjects\CreateCheckoutSessionSubscriptionData;
+use Subster\PhpSdk\DataObjects\RecordSubscriptionUsageEventData;
 
 it('serializes nested data objects', function () {
     $trial = CheckoutSessionTrialData::from([
@@ -141,5 +142,25 @@ it('serializes checkout session items with optional quantity', function () {
         'plan' => 'plan-id',
     ])->toArray())->toBe([
         'plan' => 'plan-id',
+    ]);
+});
+
+it('serializes subscription usage events without null optional fields', function () {
+    expect(RecordSubscriptionUsageEventData::from([
+        'quantity' => 20,
+        'occurred_at' => '2026-01-16T10:30:00+00:00',
+        'idempotency_key' => 'tenant-users-2026-01-16',
+        'metadata' => ['source' => 'tenant-admin'],
+    ])->toArray())->toBe([
+        'quantity' => 20,
+        'occurred_at' => '2026-01-16T10:30:00+00:00',
+        'idempotency_key' => 'tenant-users-2026-01-16',
+        'metadata' => ['source' => 'tenant-admin'],
+    ]);
+
+    expect(RecordSubscriptionUsageEventData::from([
+        'quantity' => 20,
+    ])->toArray())->toBe([
+        'quantity' => 20,
     ]);
 });

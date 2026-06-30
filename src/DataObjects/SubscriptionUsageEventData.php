@@ -4,39 +4,36 @@ declare(strict_types=1);
 
 namespace Subster\PhpSdk\DataObjects;
 
+use Carbon\Carbon;
 use Subster\PhpSdk\Concerns\Data;
 
-class InvoiceItemData extends Data
+class SubscriptionUsageEventData extends Data
 {
     /**
      * @param  array<string, mixed>|null  $metadata
      */
     public function __construct(
         public readonly string $id,
+        public readonly string $subscription,
+        public readonly string $customer,
         public readonly ?string $plan,
-        public readonly string $product_name,
-        public readonly string $type,
-        public readonly float $unit_amount,
         public readonly int $quantity,
-        public readonly float $amount,
-        public readonly ?string $description,
+        public readonly Carbon $occurred_at,
+        public readonly ?string $idempotency_key,
         public readonly ?array $metadata,
-        public readonly ?string $pricing_model = null,
     ) {}
 
     public static function fromSaloon(array $response): self
     {
         return new self(
             id: strval($response['id']),
+            subscription: strval($response['subscription']),
+            customer: strval($response['customer']),
             plan: isset($response['plan']) ? strval($response['plan']) : null,
-            product_name: strval($response['product_name']),
-            type: strval($response['type']),
-            unit_amount: floatval($response['unit_amount']),
             quantity: (int) $response['quantity'],
-            amount: floatval($response['amount']),
-            description: isset($response['description']) ? strval($response['description']) : null,
+            occurred_at: Carbon::parse($response['occurred_at']),
+            idempotency_key: isset($response['idempotency_key']) ? strval($response['idempotency_key']) : null,
             metadata: isset($response['metadata']) && is_array($response['metadata']) ? $response['metadata'] : null,
-            pricing_model: isset($response['pricing_model']) ? strval($response['pricing_model']) : null,
         );
     }
 }

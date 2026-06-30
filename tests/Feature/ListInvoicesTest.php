@@ -127,6 +127,7 @@ it('returns invoice list data from a mocked Saloon response', function () {
         ->and($subscriptionItem->plan)->toBe('plan-recurring-id')
         ->and($subscriptionItem->product_name)->toBe('Pro')
         ->and($subscriptionItem->type)->toBe('recurring')
+        ->and($subscriptionItem->pricing_model)->toBe('usage_based')
         ->and($subscriptionItem->unit_amount)->toBe(995.0)
         ->and($subscriptionItem->quantity)->toBe(2)
         ->and($subscriptionItem->amount)->toBe(1990.0)
@@ -135,6 +136,7 @@ it('returns invoice list data from a mocked Saloon response', function () {
         ->and($oneTimeInvoice->subscription)->toBeNull()
         ->and($oneTimeInvoice->description)->toBeNull()
         ->and($oneTimeItem->plan)->toBeNull()
+        ->and($oneTimeItem->pricing_model)->toBeNull()
         ->and($oneTimeItem->description)->toBeNull()
         ->and($oneTimeItem->metadata)->toBeNull();
 
@@ -179,6 +181,7 @@ function invoiceListResponse(): array
                         'plan' => 'plan-recurring-id',
                         'product_name' => 'Pro',
                         'type' => 'recurring',
+                        'pricing_model' => 'usage_based',
                         'unit_amount' => 995,
                         'quantity' => 2,
                         'amount' => 1990,
