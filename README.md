@@ -22,6 +22,16 @@
 composer require subster/php-sdk
 ```
 
+## Laravel Boost и AI skills
+
+Пакет поставляется с Laravel Boost skill для AI-ассистентов. Если в вашем Laravel-приложении установлен [Laravel Boost](https://laravel.com/docs/boost), обновите skills после установки SDK:
+
+```bash
+php artisan boost:install --skills
+```
+
+После этого AI-ассистент сможет использовать контекст Subster PHP SDK при задачах интеграции платежей, checkout, billing portal, подписок, usage-based billing и оплаченных счетов.
+
 ## Быстрый старт
 
 Получите API-ключ в Subster и создайте клиент SDK. Ключ передается в API как Bearer token.
