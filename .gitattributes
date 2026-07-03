@@ -6,4 +6,9 @@
 *.php diff=php
 
 /.github export-ignore
+/.ai export-ignore
+/.ai/** export-ignore
+/.agents export-ignore
+/.agents/** export-ignore
+/AGENTS.md export-ignore
 CHANGELOG.md export-ignore

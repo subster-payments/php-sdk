@@ -1,0 +1,4 @@
+interface:
+  display_name: "Subster SDK Development"
+  short_description: "Maintain Subster PHP SDK surfaces"
+  default_prompt: "Use $subster-sdk-development to extend or review the Subster PHP SDK."

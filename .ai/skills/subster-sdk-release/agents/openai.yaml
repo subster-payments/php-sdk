@@ -1,0 +1,4 @@
+interface:
+  display_name: "Subster SDK Release"
+  short_description: "Prepare Subster SDK releases"
+  default_prompt: "Use $subster-sdk-release to prepare a Subster PHP SDK release."
