@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace Subster\PhpSdk\DataObjects;
 
-use Carbon\CarbonImmutable;
+use DateTimeImmutable;
 use Subster\PhpSdk\Concerns\Data;
 use Subster\PhpSdk\Enums\SubscriptionPlanChangeMode;
 use Subster\PhpSdk\Enums\SubscriptionPlanChangeProrationBehavior;
+use Subster\PhpSdk\Support\DateTimeNormalizer;
 
 class SubscriptionPlanChangeData extends Data
 {
@@ -18,7 +19,7 @@ class SubscriptionPlanChangeData extends Data
         public readonly ?string $checkout_url,
         public readonly float $amount_due,
         public readonly float $credit_amount,
-        public readonly CarbonImmutable $effective_at,
+        public readonly DateTimeImmutable $effective_at,
         public readonly ?SubscriptionPlanChangeProrationBehavior $proration_behavior = null,
     ) {}
 
@@ -37,7 +38,7 @@ class SubscriptionPlanChangeData extends Data
                 : ($isLegacyResponse && isset($response['url']) ? strval($response['url']) : null),
             amount_due: floatval($response['amount_due']),
             credit_amount: floatval($response['credit_amount']),
-            effective_at: CarbonImmutable::parse($response['effective_at']),
+            effective_at: DateTimeNormalizer::parse($response['effective_at']),
             proration_behavior: isset($response['proration_behavior']) ? SubscriptionPlanChangeProrationBehavior::from(strval($response['proration_behavior'])) : null,
         );
     }

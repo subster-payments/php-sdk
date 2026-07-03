@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use Carbon\CarbonImmutable;
 use Saloon\Http\Faking\MockClient;
 use Saloon\Http\Faking\MockResponse;
 use Saloon\Http\Request;
@@ -80,8 +79,8 @@ it('returns subscription usage event data from a mocked Saloon response', functi
         ->and($event->customer)->toBe('customer-id')
         ->and($event->plan)->toBe('plan-id')
         ->and($event->quantity)->toBe(20)
-        ->and($event->occurred_at)->toBeInstanceOf(CarbonImmutable::class)
-        ->and($event->occurred_at->toIso8601String())->toBe('2026-01-16T10:30:00+00:00')
+        ->and($event->occurred_at)->toBeInstanceOf(DateTimeImmutable::class)
+        ->and($event->occurred_at->format(DateTimeInterface::ATOM))->toBe('2026-01-16T10:30:00+00:00')
         ->and($event->idempotency_key)->toBe('tenant-users-2026-01-16')
         ->and($event->metadata)->toBe(['source' => 'tenant-admin']);
 
@@ -98,7 +97,7 @@ it('serializes subscription usage event occurred at date time as utc iso string'
 
     $connector->subscriptions()->recordUsage('subscription-id', RecordSubscriptionUsageEventData::from([
         'quantity' => 20,
-        'occurred_at' => CarbonImmutable::parse('2026-01-16T13:30:00+03:00'),
+        'occurred_at' => new DateTimeImmutable('2026-01-16T13:30:00+03:00'),
     ]));
 
     $mockClient->assertSent(fn (Request $request): bool => $request instanceof RecordSubscriptionUsageEventRequest

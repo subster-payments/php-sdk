@@ -12,7 +12,7 @@ description: Integrate the official Subster PHP SDK in Laravel applications. Use
 - Use `Subster\PhpSdk\SubsterConnector` as the SDK entrypoint.
 - Check the installed SDK version and public DTOs before assuming fields or methods exist.
 - In SDK v2, finite API values are backed enum cases under `Subster\PhpSdk\Enums`; compare response DTO fields such as status and event to enum cases, not raw strings.
-- In SDK v2, response dates are `Carbon\CarbonImmutable`, invoice discount coupon identifiers use `api_identifier`, and subscription plan change checkout redirects use `$change->checkout_url`.
+- In SDK v2, response dates are native `DateTimeImmutable`, invoice discount coupon identifiers use `api_identifier`, and subscription plan change checkout redirects use `$change->checkout_url`.
 - Preserve compatibility within the installed major version: do not remove raw-array support where it already exists, and do not change public DTO constructor order in a breaking way.
 - Do not invent coupon or promotion-code CRUD through the SDK unless Subster exposes versioned API endpoints for it. Coupon management is currently an admin UI workflow.
 - Do not invent a webhook helper. This SDK currently covers API client workflows; consult the official API docs for webhook payload contracts.

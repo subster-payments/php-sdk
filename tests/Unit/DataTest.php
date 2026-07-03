@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use Carbon\CarbonImmutable;
 use Subster\PhpSdk\Concerns\Collection;
 use Subster\PhpSdk\Concerns\Data;
 use Subster\PhpSdk\DataObjects\CheckoutSessionTrialData;
@@ -202,15 +201,17 @@ it('serializes enum cases recursively', function () {
 });
 
 it('serializes date time values recursively as utc iso strings', function () {
-    $date = CarbonImmutable::parse('2026-01-16T13:30:00+03:00');
+    $date = new DateTimeImmutable('2026-01-16T13:30:00+03:00');
+    $mutableDate = new DateTime('2026-01-17T13:30:00+03:00');
     $collection = Collection::make([
         ['occurred_at' => $date],
+        ['processed_at' => $mutableDate],
     ]);
 
     $data = new class($date, ['nested' => $date], $collection) extends Data
     {
         public function __construct(
-            public readonly CarbonImmutable $occurred_at,
+            public readonly DateTimeInterface $occurred_at,
             public readonly array $payload,
             public readonly Collection $collection,
         ) {}
@@ -224,6 +225,9 @@ it('serializes date time values recursively as utc iso strings', function () {
         'collection' => [
             [
                 'occurred_at' => '2026-01-16T10:30:00+00:00',
+            ],
+            [
+                'processed_at' => '2026-01-17T10:30:00+00:00',
             ],
         ],
     ]);

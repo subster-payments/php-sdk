@@ -30,7 +30,7 @@ Use this skill when working inside `subster-payments/php-sdk` on the SDK itself.
 - Preserve raw-array compatibility anywhere existing request DTOs or request normalizers accept arrays.
 - Use explicit `toArray()` methods when the wire payload must omit null optional fields or normalize nested DTO/raw-array input.
 - In SDK v2, finite API values belong in backed enums under `Subster\PhpSdk\Enums`; request bodies must serialize enum cases to API backing values.
-- In SDK v2, response date properties should hydrate as `Carbon\CarbonImmutable`, request date inputs may accept `DateTimeInterface|string|null`, and public discount coupon identifiers are named `api_identifier`.
+- In SDK v2, response date properties should hydrate as native `DateTimeImmutable`, request date inputs may accept `DateTimeInterface|string|null`, and public discount coupon identifiers are named `api_identifier`.
 - For additive response fields, keep hydration backward-compatible when older API responses omit the fields.
 
 ## Tests And Docs

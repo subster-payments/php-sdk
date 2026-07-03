@@ -94,8 +94,9 @@ it('returns customer data from a mocked update response', function () {
         ->and($customer->id)->toBe('customer-id')
         ->and($customer->name)->toBe('Acme')
         ->and($customer->email)->toBe('billing@example.com')
-        ->and($customer->created_at->toIso8601String())->toBe('2026-01-15T10:30:00+00:00')
-        ->and($customer->updated_at->toIso8601String())->toBe('2026-01-16T10:30:00+00:00');
+        ->and($customer->created_at)->toBeInstanceOf(DateTimeImmutable::class)
+        ->and($customer->created_at->format(DateTimeInterface::ATOM))->toBe('2026-01-15T10:30:00+00:00')
+        ->and($customer->updated_at->format(DateTimeInterface::ATOM))->toBe('2026-01-16T10:30:00+00:00');
 
     $mockClient->assertSentCount(1, UpdateCustomerRequest::class);
 });

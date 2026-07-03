@@ -19,7 +19,7 @@
 ## Установка
 
 ```bash
-composer require subster-payments/php-sdk:^2.0
+composer require subster-payments/php-sdk:^2.0.1
 ```
 
 ### Переход со старого имени пакета
@@ -28,7 +28,7 @@ composer require subster-payments/php-sdk:^2.0
 
 ```bash
 composer remove subster/php-sdk --no-update
-composer require subster-payments/php-sdk:^2.0 -W
+composer require subster-payments/php-sdk:^2.0.1 -W
 ```
 
 Namespace SDK остается прежним: `Subster\PhpSdk`.
@@ -37,7 +37,7 @@ Namespace SDK остается прежним: `Subster\PhpSdk`.
 
 В v2 конечные значения API гидрируются в backed enum-ы SDK. Например, `$invoice->status` теперь возвращает `Subster\PhpSdk\Enums\InvoiceStatus::Paid`, а не строку `'paid'`. При создании DTO через `::from()` можно передавать как enum case, так и backing value; при прямом вызове constructor передавайте enum case.
 
-Response dates теперь возвращаются как `Carbon\CarbonImmutable`. `SubscriptionPlanChangeData` использует поля `$id`, `$checkout_session`, `$checkout_url`, а discount coupon field называется `$api_identifier`.
+Response dates теперь возвращаются как native `DateTimeImmutable`, без runtime-зависимости SDK от Carbon. `SubscriptionPlanChangeData` использует поля `$id`, `$checkout_session`, `$checkout_url`, а discount coupon field называется `$api_identifier`.
 
 ## Laravel Boost и AI skills
 

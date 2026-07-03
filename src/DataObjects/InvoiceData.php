@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace Subster\PhpSdk\DataObjects;
 
-use Carbon\CarbonImmutable;
+use DateTimeImmutable;
 use Subster\PhpSdk\Concerns\Collection;
 use Subster\PhpSdk\Concerns\Data;
 use Subster\PhpSdk\Enums\Currency;
 use Subster\PhpSdk\Enums\InvoiceStatus;
+use Subster\PhpSdk\Support\DateTimeNormalizer;
 
 class InvoiceData extends Data
 {
@@ -18,9 +19,9 @@ class InvoiceData extends Data
         public readonly float $amount,
         public readonly Currency $currency,
         public readonly ?string $description,
-        public readonly ?CarbonImmutable $paid_at,
-        public readonly CarbonImmutable $created_at,
-        public readonly CarbonImmutable $updated_at,
+        public readonly ?DateTimeImmutable $paid_at,
+        public readonly DateTimeImmutable $created_at,
+        public readonly DateTimeImmutable $updated_at,
         public readonly InvoiceCustomerData $customer,
         public readonly ?InvoiceSubscriptionData $subscription,
         public readonly Collection $items,
@@ -39,9 +40,9 @@ class InvoiceData extends Data
             amount: $amount,
             currency: Currency::from(strval($response['currency'])),
             description: isset($response['description']) ? strval($response['description']) : null,
-            paid_at: isset($response['paid_at']) ? CarbonImmutable::parse($response['paid_at']) : null,
-            created_at: CarbonImmutable::createFromTimestamp((int) $response['created_at'], 'UTC'),
-            updated_at: CarbonImmutable::createFromTimestamp((int) $response['updated_at'], 'UTC'),
+            paid_at: isset($response['paid_at']) ? DateTimeNormalizer::parse($response['paid_at']) : null,
+            created_at: DateTimeNormalizer::parse($response['created_at']),
+            updated_at: DateTimeNormalizer::parse($response['updated_at']),
             customer: InvoiceCustomerData::fromSaloon($response['customer']),
             subscription: isset($response['subscription']) && is_array($response['subscription'])
                 ? InvoiceSubscriptionData::fromSaloon($response['subscription'])

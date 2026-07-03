@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace Subster\PhpSdk\DataObjects;
 
-use Carbon\CarbonImmutable;
+use DateTimeImmutable;
 use Subster\PhpSdk\Concerns\Data;
+use Subster\PhpSdk\Support\DateTimeNormalizer;
 
 class InvoiceCustomerData extends Data
 {
@@ -13,8 +14,8 @@ class InvoiceCustomerData extends Data
         public readonly string $id,
         public readonly ?string $name,
         public readonly string $email,
-        public readonly CarbonImmutable $created_at,
-        public readonly CarbonImmutable $updated_at,
+        public readonly DateTimeImmutable $created_at,
+        public readonly DateTimeImmutable $updated_at,
     ) {}
 
     public static function fromSaloon(array $response): self
@@ -23,8 +24,8 @@ class InvoiceCustomerData extends Data
             id: strval($response['id']),
             name: isset($response['name']) ? strval($response['name']) : null,
             email: strval($response['email']),
-            created_at: CarbonImmutable::createFromTimestamp((int) $response['created_at'], 'UTC'),
-            updated_at: CarbonImmutable::createFromTimestamp((int) $response['updated_at'], 'UTC'),
+            created_at: DateTimeNormalizer::parse($response['created_at']),
+            updated_at: DateTimeNormalizer::parse($response['updated_at']),
         );
     }
 }

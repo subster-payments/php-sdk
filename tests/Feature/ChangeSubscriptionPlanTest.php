@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use Carbon\CarbonImmutable;
 use Saloon\Http\Faking\MockClient;
 use Saloon\Http\Faking\MockResponse;
 use Saloon\Http\Request;
@@ -132,8 +131,8 @@ it('returns subscription plan change data from a mocked Saloon response', functi
         ->and($change->proration_behavior)->toBe(SubscriptionPlanChangeProrationBehavior::None)
         ->and($change->amount_due)->toBe(4750.0)
         ->and($change->credit_amount)->toBe(250.0)
-        ->and($change->effective_at)->toBeInstanceOf(CarbonImmutable::class)
-        ->and($change->effective_at->toIso8601String())->toBe('2026-01-16T00:00:00+00:00');
+        ->and($change->effective_at)->toBeInstanceOf(DateTimeImmutable::class)
+        ->and($change->effective_at->format(DateTimeInterface::ATOM))->toBe('2026-01-16T00:00:00+00:00');
 
     $mockClient->assertSentCount(1, ChangeSubscriptionPlanRequest::class);
 });

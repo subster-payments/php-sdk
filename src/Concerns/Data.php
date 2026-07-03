@@ -5,13 +5,12 @@ declare(strict_types=1);
 namespace Subster\PhpSdk\Concerns;
 
 use BackedEnum;
-use DateTimeImmutable;
 use DateTimeInterface;
-use DateTimeZone;
 use InvalidArgumentException;
 use ReflectionClass;
 use ReflectionNamedType;
 use ReflectionType;
+use Subster\PhpSdk\Support\DateTimeNormalizer;
 
 class Data
 {
@@ -99,9 +98,7 @@ class Data
         }
 
         if ($value instanceof DateTimeInterface) {
-            return DateTimeImmutable::createFromInterface($value)
-                ->setTimezone(new DateTimeZone('UTC'))
-                ->format(DateTimeInterface::ATOM);
+            return DateTimeNormalizer::serialize($value);
         }
 
         if ($value instanceof self) {

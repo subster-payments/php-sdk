@@ -7,10 +7,9 @@ namespace Subster\PhpSdk\Concerns;
 use ArrayIterator;
 use BackedEnum;
 use Closure;
-use DateTimeImmutable;
 use DateTimeInterface;
-use DateTimeZone;
 use IteratorAggregate;
+use Subster\PhpSdk\Support\DateTimeNormalizer;
 
 class Collection implements IteratorAggregate
 {
@@ -45,9 +44,7 @@ class Collection implements IteratorAggregate
         }
 
         if ($value instanceof DateTimeInterface) {
-            return DateTimeImmutable::createFromInterface($value)
-                ->setTimezone(new DateTimeZone('UTC'))
-                ->format(DateTimeInterface::ATOM);
+            return DateTimeNormalizer::serialize($value);
         }
 
         if ($value instanceof Data || $value instanceof self) {

@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use Carbon\CarbonImmutable;
 use Saloon\Http\Faking\MockClient;
 use Saloon\Http\Faking\MockResponse;
 use Saloon\Http\Request;
@@ -54,7 +53,7 @@ it('sends list invoice filters as query parameters', function () {
         'starting_after' => 'invoice-starting-after-id',
         'customer' => 'customer-id',
         'subscription' => 'subscription-id',
-        'paid_at_gte' => CarbonImmutable::parse('2026-01-01T03:00:00+03:00'),
+        'paid_at_gte' => new DateTimeImmutable('2026-01-01T03:00:00+03:00'),
         'paid_at_lte' => '2026-01-31',
     ]));
 
@@ -117,23 +116,26 @@ it('returns invoice list data from a mocked Saloon response', function () {
         ->and($subscriptionInvoice->discount_amount)->toBe(200.0)
         ->and($subscriptionInvoice->currency)->toBe(Currency::RUB)
         ->and($subscriptionInvoice->description)->toBe('Subscription renewal')
-        ->and($subscriptionInvoice->paid_at)->toBeInstanceOf(CarbonImmutable::class)
-        ->and($subscriptionInvoice->paid_at->toIso8601String())->toBe('2026-01-16T10:30:00+00:00')
-        ->and($subscriptionInvoice->created_at->timestamp)->toBe(1768559400)
-        ->and($subscriptionInvoice->updated_at->timestamp)->toBe(1768559500)
+        ->and($subscriptionInvoice->paid_at)->toBeInstanceOf(DateTimeImmutable::class)
+        ->and($subscriptionInvoice->paid_at->format(DateTimeInterface::ATOM))->toBe('2026-01-16T10:30:00+00:00')
+        ->and($subscriptionInvoice->created_at)->toBeInstanceOf(DateTimeImmutable::class)
+        ->and($subscriptionInvoice->created_at->getTimestamp())->toBe(1768559400)
+        ->and($subscriptionInvoice->updated_at->getTimestamp())->toBe(1768559500)
         ->and($subscriptionInvoice->customer)->toBeInstanceOf(InvoiceCustomerData::class)
         ->and($subscriptionInvoice->customer->id)->toBe('customer-id')
         ->and($subscriptionInvoice->customer->name)->toBeNull()
         ->and($subscriptionInvoice->customer->email)->toBe('customer@example.com')
-        ->and($subscriptionInvoice->customer->created_at->timestamp)->toBe(1768473000)
-        ->and($subscriptionInvoice->customer->updated_at->timestamp)->toBe(1768559400)
+        ->and($subscriptionInvoice->customer->created_at)->toBeInstanceOf(DateTimeImmutable::class)
+        ->and($subscriptionInvoice->customer->created_at->getTimestamp())->toBe(1768473000)
+        ->and($subscriptionInvoice->customer->updated_at->getTimestamp())->toBe(1768559400)
         ->and($subscriptionInvoice->subscription)->toBeInstanceOf(InvoiceSubscriptionData::class)
         ->and($subscriptionInvoice->subscription->id)->toBe('subscription-id')
         ->and($subscriptionInvoice->subscription->status)->toBe(SubscriptionStatus::Active)
         ->and($subscriptionInvoice->subscription->plan)->toBe('plan-recurring-id')
         ->and($subscriptionInvoice->subscription->quantity)->toBe(2)
-        ->and($subscriptionInvoice->subscription->starts_at->toIso8601String())->toBe('2026-01-16T00:00:00+00:00')
-        ->and($subscriptionInvoice->subscription->ends_at->toIso8601String())->toBe('2026-02-16T00:00:00+00:00')
+        ->and($subscriptionInvoice->subscription->starts_at)->toBeInstanceOf(DateTimeImmutable::class)
+        ->and($subscriptionInvoice->subscription->starts_at->format(DateTimeInterface::ATOM))->toBe('2026-01-16T00:00:00+00:00')
+        ->and($subscriptionInvoice->subscription->ends_at->format(DateTimeInterface::ATOM))->toBe('2026-02-16T00:00:00+00:00')
         ->and($subscriptionInvoice->subscription->cancel_at_period_end)->toBeFalse()
         ->and($discount)->toBeInstanceOf(InvoiceDiscountData::class)
         ->and($discount->subtotal_amount)->toBe(2000.0)

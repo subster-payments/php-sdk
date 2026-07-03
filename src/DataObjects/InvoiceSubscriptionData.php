@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace Subster\PhpSdk\DataObjects;
 
-use Carbon\CarbonImmutable;
+use DateTimeImmutable;
 use Subster\PhpSdk\Concerns\Data;
 use Subster\PhpSdk\Enums\SubscriptionStatus;
+use Subster\PhpSdk\Support\DateTimeNormalizer;
 
 class InvoiceSubscriptionData extends Data
 {
@@ -15,8 +16,8 @@ class InvoiceSubscriptionData extends Data
         public readonly SubscriptionStatus $status,
         public readonly string $plan,
         public readonly int $quantity,
-        public readonly CarbonImmutable $starts_at,
-        public readonly CarbonImmutable $ends_at,
+        public readonly DateTimeImmutable $starts_at,
+        public readonly DateTimeImmutable $ends_at,
         public readonly bool $cancel_at_period_end,
     ) {}
 
@@ -27,8 +28,8 @@ class InvoiceSubscriptionData extends Data
             status: SubscriptionStatus::from(strval($response['status'])),
             plan: strval($response['plan']),
             quantity: (int) $response['quantity'],
-            starts_at: CarbonImmutable::parse($response['starts_at']),
-            ends_at: CarbonImmutable::parse($response['ends_at']),
+            starts_at: DateTimeNormalizer::parse($response['starts_at']),
+            ends_at: DateTimeNormalizer::parse($response['ends_at']),
             cancel_at_period_end: boolval($response['cancel_at_period_end']),
         );
     }

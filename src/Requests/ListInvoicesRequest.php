@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Subster\PhpSdk\Requests;
 
-use DateTimeImmutable;
 use DateTimeInterface;
-use DateTimeZone;
 use Saloon\Enums\Method;
 use Saloon\Http\Request;
 use Saloon\Http\Response;
@@ -14,6 +12,7 @@ use Saloon\Traits\Request\HasConnector;
 use Subster\PhpSdk\DataObjects\InvoiceListData;
 use Subster\PhpSdk\DataObjects\ListInvoicesData;
 use Subster\PhpSdk\SubsterConnector;
+use Subster\PhpSdk\Support\DateTimeNormalizer;
 
 class ListInvoicesRequest extends Request
 {
@@ -46,9 +45,7 @@ class ListInvoicesRequest extends Request
     private function formatDateFilter(DateTimeInterface|string|null $value): ?string
     {
         if ($value instanceof DateTimeInterface) {
-            return DateTimeImmutable::createFromInterface($value)
-                ->setTimezone(new DateTimeZone('UTC'))
-                ->format(DateTimeInterface::ATOM);
+            return DateTimeNormalizer::serialize($value);
         }
 
         return $value;

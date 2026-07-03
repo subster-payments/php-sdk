@@ -2,6 +2,12 @@
 
 All notable changes to `subster-payments/php-sdk` will be documented in this file.
 
+## v2.0.1 - 2026-07-03
+
+- Replaced public response date DTO types from `Carbon\CarbonImmutable` with native `DateTimeImmutable`.
+- Removed the direct `nesbot/carbon` runtime dependency from the SDK.
+- Kept request date inputs compatible with `DateTimeInterface|string|null`; date-only strings are still preserved as strings.
+
 ## v2.0.0 - 2026-07-03
 
 - Renamed the Composer package from `subster/php-sdk` to `subster-payments/php-sdk`.
