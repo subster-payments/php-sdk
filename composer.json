@@ -1,8 +1,8 @@
 {
-    "name": "subster/php-sdk",
+    "name": "subster-payments/php-sdk",
     "description": "Official PHP SDK for Subster",
     "keywords" : ["subster", "php", "sdk", "api", "client"],
-    "homepage" : "https://github.com/subster/php-sdk",
+    "homepage" : "https://github.com/subster-payments/php-sdk",
     "license": "MIT",
     "type": "library",
     "authors": [

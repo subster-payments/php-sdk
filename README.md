@@ -19,8 +19,19 @@
 ## Установка
 
 ```bash
-composer require subster/php-sdk
+composer require subster-payments/php-sdk
 ```
+
+### Переход со старого имени пакета
+
+Если в проекте уже установлен пакет `subster/php-sdk`, замените его на новое имя:
+
+```bash
+composer remove subster/php-sdk --no-update
+composer require subster-payments/php-sdk:^1.0 -W
+```
+
+Namespace SDK остается прежним: `Subster\PhpSdk`.
 
 ## Laravel Boost и AI skills
 

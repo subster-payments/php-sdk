@@ -1,8 +1,10 @@
 # Changelog
 
-All notable changes to `subster/php-sdk` will be documented in this file.
+All notable changes to `subster-payments/php-sdk` will be documented in this file.
 
 ## Unreleased
+
+- Renamed the Composer package from `subster/php-sdk` to `subster-payments/php-sdk`.
 
 ## v1.0.2 - 2026-07-03
 

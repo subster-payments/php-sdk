@@ -5,7 +5,7 @@ description: Maintain and extend the Subster PHP SDK. Use when adding or changin
 
 # Subster SDK Development
 
-Use this skill when working inside `subster/php-sdk` on the SDK itself. Keep runtime API changes small, additive, and aligned with the existing Saloon v4 resource/request structure.
+Use this skill when working inside `subster-payments/php-sdk` on the SDK itself. Keep runtime API changes small, additive, and aligned with the existing Saloon v4 resource/request structure.
 
 ## Start Here
 

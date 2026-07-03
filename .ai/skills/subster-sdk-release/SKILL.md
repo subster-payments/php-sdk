@@ -1,11 +1,11 @@
 ---
 name: subster-sdk-release
-description: Prepare Subster PHP SDK releases. Use when updating CHANGELOG, README, RELEASING, SemVer decisions, release notes, Packagist publishing, git tags, Composer package readiness, or post-release verification for subster/php-sdk.
+description: Prepare Subster PHP SDK releases. Use when updating CHANGELOG, README, RELEASING, SemVer decisions, release notes, Packagist publishing, git tags, Composer package readiness, or post-release verification for subster-payments/php-sdk.
 ---
 
 # Subster SDK Release
 
-Use this skill when preparing or explaining a `subster/php-sdk` release. Keep release work traceable, SemVer-compatible, and Packagist-friendly.
+Use this skill when preparing or explaining a `subster-payments/php-sdk` release. Keep release work traceable, SemVer-compatible, and Packagist-friendly.
 
 ## Start Here
 
@@ -41,7 +41,7 @@ git tag -a vX.Y.Z -m "vX.Y.Z"
 git push origin vX.Y.Z
 ```
 
-Packagist should detect the new tag for `subster/php-sdk`. If automatic updates lag, refresh the package from Packagist after verifying the tag exists on GitHub.
+Packagist should detect the new tag for `subster-payments/php-sdk`. If automatic updates lag, refresh the package from Packagist after verifying the tag exists on GitHub.
 
 ## Release Notes
 

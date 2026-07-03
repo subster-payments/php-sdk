@@ -1,13 +1,13 @@
 ---
 name: subster-php-sdk
-description: Integrate the official Subster PHP SDK in Laravel applications. Use when building or changing Subster billing, payments, hosted checkout, billing portal, subscription plan changes, usage-based billing snapshots, paid invoice sync, or customer synchronization with subster/php-sdk.
+description: Integrate the official Subster PHP SDK in Laravel applications. Use when building or changing Subster billing, payments, hosted checkout, billing portal, subscription plan changes, usage-based billing snapshots, paid invoice sync, or customer synchronization with subster-payments/php-sdk.
 ---
 
 # Subster PHP SDK
 
 ## Core Rules
 
-- Prefer `subster/php-sdk` over raw HTTP when the SDK exposes the needed endpoint.
+- Prefer `subster-payments/php-sdk` over raw HTTP when the SDK exposes the needed endpoint.
 - Keep Subster API keys in environment-backed Laravel config. Never hard-code tokens in source code, tests, prompts, or docs.
 - Use `Subster\PhpSdk\SubsterConnector` as the SDK entrypoint.
 - Check the installed SDK version and public DTOs before assuming fields or methods exist.
@@ -20,7 +20,7 @@ description: Integrate the official Subster PHP SDK in Laravel applications. Use
 Confirm the application requires the package:
 
 ```bash
-composer require subster/php-sdk
+composer require subster-payments/php-sdk
 ```
 
 Use an environment variable for the API token:

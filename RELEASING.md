@@ -1,12 +1,22 @@
 # Релизы Subster PHP SDK
 
-Этот файл описывает рабочий процесс публикации `subster/php-sdk` на Packagist.
+Этот файл описывает рабочий процесс публикации `subster-payments/php-sdk` на Packagist.
 
 ## Как Packagist получает версии
 
 Packagist берет версии из git-тегов репозитория. В `composer.json` не нужно добавлять поле `version`: Composer и Packagist сами определяют версии по тегам вида `v1.2.3` или `1.2.3`.
 
 Пакет настроен на auto-update, поэтому после push нового тега Packagist обычно обновляется автоматически. Если обновление не сработало, его можно вручную запустить на странице пакета в Packagist.
+
+## Переименование пакета на Packagist
+
+После смены `name` в `composer.json` на `subster-payments/php-sdk` нужно один раз отправить репозиторий на Packagist как новый пакет:
+
+- submit URL репозитория: `https://github.com/subster-payments/php-sdk`;
+- новый пакет должен появиться как `subster-payments/php-sdk`;
+- старый пакет `subster/php-sdk` нужно пометить как abandoned и указать replacement `subster-payments/php-sdk`.
+
+Старые версии останутся привязаны к старому имени пакета. Новые теги после переименования будут публиковаться под новым именем.
 
 ## Как выбрать версию
 
@@ -61,7 +71,7 @@ git push origin v1.0.1
 
 После push проверьте страницу пакета:
 
-- https://packagist.org/packages/subster/php-sdk
+- https://packagist.org/packages/subster-payments/php-sdk
 
 ## Что важно не делать
 
@@ -76,19 +86,27 @@ git push origin v1.0.1
 Рекомендуемая установка стабильной версии:
 
 ```bash
-composer require subster/php-sdk:^1.0
+composer require subster-payments/php-sdk:^1.0
 ```
 
 Обновление пакета в приложении:
 
 ```bash
-composer update subster/php-sdk --with-dependencies
+composer update subster-payments/php-sdk --with-dependencies
+```
+
+Если проект еще использует старое имя пакета, замените зависимость:
+
+```bash
+composer remove subster/php-sdk --no-update
+composer require subster-payments/php-sdk:^1.0 -W
 ```
 
 Для проверки unreleased-кода можно временно использовать `dev-main`, но это не рекомендуется для production-приложений.
 
 ## Полезные ссылки
 
-- Packagist: https://packagist.org/packages/subster/php-sdk
+- Packagist: https://packagist.org/packages/subster-payments/php-sdk
+- Старый пакет: https://packagist.org/packages/subster/php-sdk
 - Composer versions: https://getcomposer.org/doc/articles/versions.md
 - Semantic Versioning: https://semver.org/
