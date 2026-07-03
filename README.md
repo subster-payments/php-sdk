@@ -1,50 +1,98 @@
 # Subster PHP SDK
 
-Work in progress. Not ready for production yet!
+Официальный PHP SDK для [Subster](https://subster.ru/) — сервиса для приема платежей, автоплатежей и управления подписками. SDK помогает работать с Subster API из PHP-кода: создавать клиентов, запускать hosted checkout, открывать billing portal, менять тарифы подписок, передавать usage-based использование и получать оплаченные счета.
 
-## Requirements
-- PHP 8.1 or later.
+Полный контракт API, параметры запросов и ответы доступны в [официальной API-документации](https://subster.ru/docs/api#/).
 
-## Installation
-Install via composer:
+## Быстрые ссылки
+
+- [Сайт продукта](https://subster.ru/)
+- [API-документация](https://subster.ru/docs/api#/)
+- [Changelog](CHANGELOG.md)
+- [License](LICENSE.md)
+
+## Требования
+
+- PHP 8.1 или выше.
+- Composer.
+
+## Установка
+
 ```bash
 composer require subster/php-sdk
 ```
 
-# Usage
+## Быстрый старт
 
-## Create a checkout session
+Получите API-ключ в Subster и создайте клиент SDK. Ключ передается в API как Bearer token.
 
 ```php
 use Subster\PhpSdk\SubsterConnector;
-use Subster\PhpSdk\DataObjects\CreateCheckoutSessionData;
 
 $subster = new SubsterConnector('your-api-key');
+```
+
+Минимальный сценарий интеграции обычно состоит из двух шагов: создать клиента Subster и отправить его на hosted checkout для оплаты тарифа.
+
+```php
+use Subster\PhpSdk\DataObjects\CreateCheckoutSessionData;
+use Subster\PhpSdk\DataObjects\CreateCustomerData;
+
+$customer = $subster->customers()->create(
+    CreateCustomerData::from([
+        'email' => 'customer@example.ru',
+        'name' => 'Иван Петров',
+    ])
+);
 
 $session = $subster->checkoutSessions()->create(
     CreateCheckoutSessionData::from([
-        'customer' => 'customer-id',
+        'customer' => $customer->id,
         'items' => [
             [
                 'plan' => 'your-plan-id',
             ],
         ],
-        'success_url' => 'https://example.ru/success',
-        'cancel_url' => 'https://example.ru/cancel',
+        'success_url' => 'https://example.ru/billing/success',
+        'cancel_url' => 'https://example.ru/billing/cancel',
+    ])
+);
+
+// Redirect the customer to $session->url.
+```
+
+## Основные сценарии
+
+### Клиенты
+
+Создавайте и обновляйте клиентов аккаунта перед оформлением платежей.
+
+```php
+use Subster\PhpSdk\DataObjects\CreateCustomerData;
+use Subster\PhpSdk\DataObjects\UpdateCustomerData;
+
+$customer = $subster->customers()->create(
+    CreateCustomerData::from([
+        'email' => 'customer@example.ru',
+        'name' => 'Иван Петров',
+    ])
+);
+
+$updatedCustomer = $subster->customers()->update(
+    UpdateCustomerData::from([
+        'id' => $customer->id,
+        'name' => 'Иван Сергеевич Петров',
     ])
 );
 ```
 
-## Create a one-time checkout session with quantity
+### Checkout-сессии
 
-Use `quantity` when the customer buys multiple units of the same price, for example 5 token packs. If `quantity` is omitted, Subster treats the checkout item as quantity `1`.
+Checkout-сессия возвращает URL платежной страницы Subster. В `items` сейчас передается тариф `plan`; для разовых оплат и usage-based тарифов можно указать `quantity`.
 
 ```php
-use Subster\PhpSdk\SubsterConnector;
 use Subster\PhpSdk\DataObjects\CreateCheckoutSessionData;
 use Subster\PhpSdk\DataObjects\CreateCheckoutSessionItemData;
-
-$subster = new SubsterConnector('your-api-key');
 
 $session = $subster->checkoutSessions()->create(
     CreateCheckoutSessionData::from([
@@ -55,13 +103,13 @@ $session = $subster->checkoutSessions()->create(
                 'quantity' => 5,
             ]),
         ],
-        'success_url' => 'https://example.ru/success',
-        'cancel_url' => 'https://example.ru/cancel',
+        'success_url' => 'https://example.ru/billing/success',
+        'cancel_url' => 'https://example.ru/billing/cancel',
     ])
 );
 ```
 
-Raw arrays are still supported:
+Raw arrays также поддерживаются:
 
 ```php
 'items' => [
@@ -72,41 +120,21 @@ Raw arrays are still supported:
 ],
 ```
 
-## Create a usage-based subscription checkout
-
-Usage-based recurring prices require an initial `quantity` for the first checkout invoice. Later renewal invoices use the latest usage snapshot recorded on the subscription.
+Статус checkout-сессии можно получить по ее ID:
 
 ```php
-use Subster\PhpSdk\SubsterConnector;
-use Subster\PhpSdk\DataObjects\CreateCheckoutSessionData;
-
-$subster = new SubsterConnector('your-api-key');
-
-$session = $subster->checkoutSessions()->create(
-    CreateCheckoutSessionData::from([
-        'customer' => 'customer-id',
-        'items' => [
-            [
-                'plan' => 'your-usage-based-plan-id',
-                'quantity' => 20,
-            ],
-        ],
-        'success_url' => 'https://example.ru/success',
-        'cancel_url' => 'https://example.ru/cancel',
-    ])
-);
+$status = $subster->checkoutSessions()->get('checkout-session-id');
 ```
 
-## Create a checkout session with a paid trial
+### Платный trial
+
+Для подписок можно передать данные trial в `subscription_data`. Допустимые единицы длительности: `hour`, `day`, `week`, `month`, `year`.
 
 ```php
-use Subster\PhpSdk\SubsterConnector;
 use Subster\PhpSdk\DataObjects\CheckoutSessionTrialData;
 use Subster\PhpSdk\DataObjects\CheckoutSessionTrialDurationData;
 use Subster\PhpSdk\DataObjects\CreateCheckoutSessionData;
 use Subster\PhpSdk\DataObjects\CreateCheckoutSessionSubscriptionData;
-
-$subster = new SubsterConnector('your-api-key');
 
 $session = $subster->checkoutSessions()->create(
     CreateCheckoutSessionData::from([
@@ -125,44 +153,42 @@ $session = $subster->checkoutSessions()->create(
                 ]),
             ]),
         ]),
-        'success_url' => 'https://example.ru/success',
-        'cancel_url' => 'https://example.ru/cancel',
+        'success_url' => 'https://example.ru/billing/success',
+        'cancel_url' => 'https://example.ru/billing/cancel',
     ])
 );
 ```
 
-Allowed trial duration units: `hour`, `day`, `week`, `month`, `year`.
+### Billing portal
 
-## Create a billing portal session
+Billing portal позволяет клиенту управлять подпиской, способом оплаты и счетами через hosted-страницу Subster.
 
 ```php
-use Subster\PhpSdk\SubsterConnector;
 use Subster\PhpSdk\DataObjects\CreateBillingPortalSessionData;
 
-$subster = new SubsterConnector('your-api-key');
-
-$session = $subster->billingPortalSessions()->create(
+$portalSession = $subster->billingPortalSessions()->create(
     CreateBillingPortalSessionData::from([
         'customer' => 'customer-id',
         'return_url' => 'https://example.ru/billing',
     ])
 );
+
+// Redirect the customer to $portalSession->url.
 ```
 
-## Change a subscription plan
+### Смена тарифа подписки
+
+`changePlan` меняет тариф подписки. Если требуется доплата, Subster вернет checkout URL.
 
 ```php
-use Subster\PhpSdk\SubsterConnector;
 use Subster\PhpSdk\DataObjects\ChangeSubscriptionPlanData;
-
-$subster = new SubsterConnector('your-api-key');
 
 $change = $subster->subscriptions()->changePlan(
     'subscription-id',
     ChangeSubscriptionPlanData::from([
         'plan' => 'target-plan-id',
-        'success_url' => 'https://example.ru/success',
-        'cancel_url' => 'https://example.ru/cancel',
+        'success_url' => 'https://example.ru/billing/success',
+        'cancel_url' => 'https://example.ru/billing/cancel',
     ])
 );
 
@@ -171,33 +197,45 @@ if ($change->mode === 'checkout') {
 }
 ```
 
-By default Subster prorates immediate upgrades and credits the unused time from the current period. For prepaid package plans where the customer should pay the full target plan amount, pass `proration_behavior: none`.
+По умолчанию Subster делает перерасчет при немедленном upgrade и учитывает неиспользованное время текущего периода. Для тарифов-пакетов, где клиент должен оплатить полную стоимость нового тарифа, передайте `proration_behavior: none`.
 
 ```php
 $change = $subster->subscriptions()->changePlan(
     'subscription-id',
     ChangeSubscriptionPlanData::from([
         'plan' => 'larger-package-plan-id',
-        'success_url' => 'https://example.ru/success',
+        'success_url' => 'https://example.ru/billing/success',
         'proration_behavior' => 'none',
     ])
 );
 ```
 
-## Record a subscription usage snapshot
+### Usage-based подписки
 
-Use `recordUsage` for usage-based recurring subscriptions. The `quantity` is the current absolute usage snapshot, not a delta.
+Для usage-based подписок сначала передайте стартовое `quantity` при создании checkout-сессии. Для последующих периодов фиксируйте текущее значение использования через `recordUsage`. `quantity` — это абсолютный snapshot использования, а не дельта.
 
 ```php
-use Subster\PhpSdk\SubsterConnector;
+use Subster\PhpSdk\DataObjects\CreateCheckoutSessionData;
 use Subster\PhpSdk\DataObjects\RecordSubscriptionUsageEventData;
 
-$subster = new SubsterConnector('your-api-key');
+$session = $subster->checkoutSessions()->create(
+    CreateCheckoutSessionData::from([
+        'customer' => 'customer-id',
+        'items' => [
+            [
+                'plan' => 'your-usage-based-plan-id',
+                'quantity' => 20,
+            ],
+        ],
+        'success_url' => 'https://example.ru/billing/success',
+        'cancel_url' => 'https://example.ru/billing/cancel',
+    ])
+);
 
 $event = $subster->subscriptions()->recordUsage(
     'subscription-id',
     RecordSubscriptionUsageEventData::from([
-        'quantity' => 20,
+        'quantity' => 35,
         'occurred_at' => '2026-01-16T10:30:00+00:00',
         'idempotency_key' => 'tenant-users-2026-01-16',
         'metadata' => ['source' => 'tenant-admin'],
@@ -205,13 +243,12 @@ $event = $subster->subscriptions()->recordUsage(
 );
 ```
 
-## List paid invoices
+### Оплаченные счета
+
+Получайте оплаченные счета с фильтрами по клиенту, подписке и дате оплаты. Ответ включает данные клиента, подписки и позиции счета.
 
 ```php
-use Subster\PhpSdk\SubsterConnector;
 use Subster\PhpSdk\DataObjects\ListInvoicesData;
-
-$subster = new SubsterConnector('your-api-key');
 
 $invoices = $subster->invoices()->all(ListInvoicesData::from([
     'customer' => 'customer-id',
@@ -225,9 +262,7 @@ foreach ($invoices->data as $invoice) {
 }
 ```
 
-Invoice items expose nullable `$item->pricing_model`. For usage-based renewal invoices, item metadata may include the backend meter details and the usage snapshot used for billing.
-
-If `$invoices->has_more` is true, request the next page with the last invoice id:
+Если `$invoices->has_more` равен `true`, запросите следующую страницу с ID последнего счета:
 
 ```php
 $nextPage = $subster->invoices()->all(ListInvoicesData::from([
@@ -235,19 +270,24 @@ $nextPage = $subster->invoices()->all(ListInvoicesData::from([
 ]));
 ```
 
-# Testing
+Позиции счета содержат nullable поле `$item->pricing_model`. Для usage-based счетов metadata может включать детали backend meter и snapshot использования, по которому был сформирован счет.
+
+## Ошибки и полный API-контракт
+
+SDK использует Saloon и выбрасывает исключения для неуспешных HTTP-ответов. Для обработки ошибок ориентируйтесь на статус API-ответа и тело ошибки Subster.
+
+Полный список endpoint-ов, обязательные поля, форматы дат, варианты валидационных ошибок и webhook-сценарии смотрите в [официальной API-документации](https://subster.ru/docs/api#/).
+
+## Тесты
+
 ```bash
 composer test
 ```
 
 ## Changelog
 
-Please see [CHANGELOG](CHANGELOG.md) for more information on what has changed recently.
-
-## Credits
-
-- [Subster](https://github.com/subster)
+Список изменений находится в [CHANGELOG](CHANGELOG.md).
 
 ## License
 
-The MIT License (MIT). Please see [License File](LICENSE.md) for more information.
+The MIT License (MIT). See [License File](LICENSE.md) for more information.
