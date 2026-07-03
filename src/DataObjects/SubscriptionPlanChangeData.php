@@ -17,6 +17,7 @@ class SubscriptionPlanChangeData extends Data
         public readonly float $amount_due,
         public readonly float $credit_amount,
         public readonly Carbon $effective_at,
+        public readonly ?string $proration_behavior = null,
     ) {}
 
     public static function fromSaloon(array $response): self
@@ -29,6 +30,7 @@ class SubscriptionPlanChangeData extends Data
             amount_due: floatval($response['amount_due']),
             credit_amount: floatval($response['credit_amount']),
             effective_at: Carbon::parse($response['effective_at']),
+            proration_behavior: isset($response['proration_behavior']) ? strval($response['proration_behavior']) : null,
         );
     }
 }

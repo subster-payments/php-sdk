@@ -171,6 +171,19 @@ if ($change->mode === 'checkout') {
 }
 ```
 
+By default Subster prorates immediate upgrades and credits the unused time from the current period. For prepaid package plans where the customer should pay the full target plan amount, pass `proration_behavior: none`.
+
+```php
+$change = $subster->subscriptions()->changePlan(
+    'subscription-id',
+    ChangeSubscriptionPlanData::from([
+        'plan' => 'larger-package-plan-id',
+        'success_url' => 'https://example.ru/success',
+        'proration_behavior' => 'none',
+    ])
+);
+```
+
 ## Record a subscription usage snapshot
 
 Use `recordUsage` for usage-based recurring subscriptions. The `quantity` is the current absolute usage snapshot, not a delta.

@@ -12,5 +12,6 @@ class ChangeSubscriptionPlanData extends Data
         public readonly string $plan,
         public readonly ?string $success_url = null,
         public readonly ?string $cancel_url = null,
+        public readonly ?string $proration_behavior = null,
     ) {}
 }
