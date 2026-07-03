@@ -5,7 +5,11 @@ declare(strict_types=1);
 namespace Subster\PhpSdk\Concerns;
 
 use ArrayIterator;
+use BackedEnum;
 use Closure;
+use DateTimeImmutable;
+use DateTimeInterface;
+use DateTimeZone;
 use IteratorAggregate;
 
 class Collection implements IteratorAggregate
@@ -36,6 +40,16 @@ class Collection implements IteratorAggregate
 
     protected function normalizeValue(mixed $value): mixed
     {
+        if ($value instanceof BackedEnum) {
+            return $value->value;
+        }
+
+        if ($value instanceof DateTimeInterface) {
+            return DateTimeImmutable::createFromInterface($value)
+                ->setTimezone(new DateTimeZone('UTC'))
+                ->format(DateTimeInterface::ATOM);
+        }
+
         if ($value instanceof Data || $value instanceof self) {
             return $value->toArray();
         }

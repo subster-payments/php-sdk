@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Subster\PhpSdk\DataObjects;
 
+use DateTimeInterface;
 use Subster\PhpSdk\Concerns\Data;
 
 class ListInvoicesData extends Data
@@ -14,7 +15,7 @@ class ListInvoicesData extends Data
         public readonly ?string $ending_before = null,
         public readonly ?string $customer = null,
         public readonly ?string $subscription = null,
-        public readonly ?string $paid_at_gte = null,
-        public readonly ?string $paid_at_lte = null,
+        public readonly DateTimeInterface|string|null $paid_at_gte = null,
+        public readonly DateTimeInterface|string|null $paid_at_lte = null,
     ) {}
 }

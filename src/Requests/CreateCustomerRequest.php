@@ -33,7 +33,7 @@ class CreateCustomerRequest extends Request implements HasBody
     protected function defaultBody(): array
     {
         return [
-            'name' => $this->data->name,
+            ...($this->data->name !== null ? ['name' => $this->data->name] : []),
             'email' => $this->data->email,
         ];
     }

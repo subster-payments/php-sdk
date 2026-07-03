@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Subster\PhpSdk\DataObjects;
 
 use Subster\PhpSdk\Concerns\Data;
+use Subster\PhpSdk\Enums\PlanType;
+use Subster\PhpSdk\Enums\PricingModel;
 
 class InvoiceItemData extends Data
 {
@@ -15,13 +17,13 @@ class InvoiceItemData extends Data
         public readonly string $id,
         public readonly ?string $plan,
         public readonly string $product_name,
-        public readonly string $type,
+        public readonly PlanType $type,
         public readonly float $unit_amount,
         public readonly int $quantity,
         public readonly float $amount,
         public readonly ?string $description,
         public readonly ?array $metadata,
-        public readonly ?string $pricing_model = null,
+        public readonly ?PricingModel $pricing_model = null,
     ) {}
 
     public static function fromSaloon(array $response): self
@@ -30,13 +32,13 @@ class InvoiceItemData extends Data
             id: strval($response['id']),
             plan: isset($response['plan']) ? strval($response['plan']) : null,
             product_name: strval($response['product_name']),
-            type: strval($response['type']),
+            type: PlanType::from(strval($response['type'])),
             unit_amount: floatval($response['unit_amount']),
             quantity: (int) $response['quantity'],
             amount: floatval($response['amount']),
             description: isset($response['description']) ? strval($response['description']) : null,
             metadata: isset($response['metadata']) && is_array($response['metadata']) ? $response['metadata'] : null,
-            pricing_model: isset($response['pricing_model']) ? strval($response['pricing_model']) : null,
+            pricing_model: isset($response['pricing_model']) ? PricingModel::from(strval($response['pricing_model'])) : null,
         );
     }
 }

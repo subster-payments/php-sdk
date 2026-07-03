@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Subster\PhpSdk\DataObjects;
 
-use Carbon\Carbon;
+use Carbon\CarbonImmutable;
 use Subster\PhpSdk\Concerns\Data;
 
 class SubscriptionUsageEventData extends Data
@@ -18,7 +18,7 @@ class SubscriptionUsageEventData extends Data
         public readonly string $customer,
         public readonly ?string $plan,
         public readonly int $quantity,
-        public readonly Carbon $occurred_at,
+        public readonly CarbonImmutable $occurred_at,
         public readonly ?string $idempotency_key,
         public readonly ?array $metadata,
     ) {}
@@ -31,7 +31,7 @@ class SubscriptionUsageEventData extends Data
             customer: strval($response['customer']),
             plan: isset($response['plan']) ? strval($response['plan']) : null,
             quantity: (int) $response['quantity'],
-            occurred_at: Carbon::parse($response['occurred_at']),
+            occurred_at: CarbonImmutable::parse($response['occurred_at']),
             idempotency_key: isset($response['idempotency_key']) ? strval($response['idempotency_key']) : null,
             metadata: isset($response['metadata']) && is_array($response['metadata']) ? $response['metadata'] : null,
         );

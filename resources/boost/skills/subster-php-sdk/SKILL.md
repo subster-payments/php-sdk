@@ -1,6 +1,6 @@
 ---
 name: subster-php-sdk
-description: Integrate the official Subster PHP SDK in Laravel applications. Use when building or changing Subster billing, payments, hosted checkout, billing portal, subscription plan changes, usage-based billing snapshots, paid invoice sync, or customer synchronization with subster-payments/php-sdk.
+description: Integrate the official Subster PHP SDK in Laravel applications. Use when building or changing Subster billing, payments, hosted checkout, promotion codes, billing portal, subscription plan changes, usage-based billing snapshots, paid invoice and discount sync, or customer synchronization with subster-payments/php-sdk.
 ---
 
 # Subster PHP SDK
@@ -11,7 +11,10 @@ description: Integrate the official Subster PHP SDK in Laravel applications. Use
 - Keep Subster API keys in environment-backed Laravel config. Never hard-code tokens in source code, tests, prompts, or docs.
 - Use `Subster\PhpSdk\SubsterConnector` as the SDK entrypoint.
 - Check the installed SDK version and public DTOs before assuming fields or methods exist.
-- Preserve existing SDK compatibility: do not remove raw-array support where it already exists, and do not change public DTO constructor order in a breaking way.
+- In SDK v2, finite API values are backed enum cases under `Subster\PhpSdk\Enums`; compare response DTO fields such as status and event to enum cases, not raw strings.
+- In SDK v2, response dates are `Carbon\CarbonImmutable`, invoice discount coupon identifiers use `api_identifier`, and subscription plan change checkout redirects use `$change->checkout_url`.
+- Preserve compatibility within the installed major version: do not remove raw-array support where it already exists, and do not change public DTO constructor order in a breaking way.
+- Do not invent coupon or promotion-code CRUD through the SDK unless Subster exposes versioned API endpoints for it. Coupon management is currently an admin UI workflow.
 - Do not invent a webhook helper. This SDK currently covers API client workflows; consult the official API docs for webhook payload contracts.
 - When the API contract is unclear, check https://subster.ru/docs/api#/ before changing application behavior.
 
@@ -62,6 +65,9 @@ $customer = $subster->customers()->create(
     ])
 );
 
+$promotionCode = trim((string) $request->input('promotion_code', ''));
+$promotionCode = $promotionCode === '' ? null : $promotionCode;
+
 $session = $subster->checkoutSessions()->create(
     CreateCheckoutSessionData::from([
         'customer' => $customer->id,
@@ -72,11 +78,14 @@ $session = $subster->checkoutSessions()->create(
         ],
         'success_url' => route('billing.success'),
         'cancel_url' => route('billing.cancel'),
+        'promotion_code' => $promotionCode,
     ])
 );
 
 return redirect()->away($session->url);
 ```
+
+Pass `promotion_code` only when the customer supplied a code. The SDK omits `null` and blank promotion codes from the request body; validation failures from Subster should be shown as checkout errors.
 
 Use `checkoutSessions()->get($sessionId)` when the application needs to poll or verify checkout status server-side.
 
@@ -120,6 +129,7 @@ Use `subscriptions()->changePlan()` for subscription upgrades, downgrades, and p
 
 ```php
 use Subster\PhpSdk\DataObjects\ChangeSubscriptionPlanData;
+use Subster\PhpSdk\Enums\SubscriptionPlanChangeMode;
 
 $change = $subster->subscriptions()->changePlan(
     $substerSubscriptionId,
@@ -130,12 +140,12 @@ $change = $subster->subscriptions()->changePlan(
     ])
 );
 
-if ($change->mode === 'checkout' && $change->url !== null) {
-    return redirect()->away($change->url);
+if ($change->mode === SubscriptionPlanChangeMode::Checkout && $change->checkout_url !== null) {
+    return redirect()->away($change->checkout_url);
 }
 ```
 
-Subster prorates immediate upgrades by default. For prepaid package plans where the customer should pay the full target plan amount, pass `proration_behavior` as `none`.
+Subster prorates immediate upgrades by default. For prepaid package plans where the customer should pay the full target plan amount, pass `proration_behavior` as `SubscriptionPlanChangeProrationBehavior::None`.
 
 ## Usage-Based Billing
 
@@ -148,7 +158,7 @@ $event = $subster->subscriptions()->recordUsage(
     $substerSubscriptionId,
     RecordSubscriptionUsageEventData::from([
         'quantity' => $currentSeatCount,
-        'occurred_at' => now()->toIso8601String(),
+        'occurred_at' => now(),
         'idempotency_key' => 'subscription-'.$substerSubscriptionId.'-'.now()->toDateString(),
         'metadata' => ['source' => 'laravel-app'],
     ])
@@ -172,11 +182,21 @@ $invoices = $subster->invoices()->all(ListInvoicesData::from([
 ]));
 
 foreach ($invoices->data as $invoice) {
-    // $invoice->customer, $invoice->subscription, and $invoice->items are included.
+    // $invoice->customer, $invoice->subscription, $invoice->items, and discount fields are included.
 }
 ```
 
 If `$invoices->has_more` is true, request the next page with the last invoice id as `starting_after`.
+
+`paid_at_gte`, `paid_at_lte`, and usage event `occurred_at` accept `DateTimeInterface` or strings. Date-only strings are preserved for calendar filters.
+
+Invoice DTOs include discount-aware amounts:
+
+- `$invoice->amount` is the final paid amount.
+- `$invoice->status`, `$invoice->currency`, item `type`, item `pricing_model`, discount coupon type, discount coupon duration, and discount currency are enum cases in SDK v2.
+- `$invoice->subtotal_amount` is the amount before discount. Older API responses hydrate this from `amount`.
+- `$invoice->discount_amount` is `0.0` when there is no discount.
+- `$invoice->discount` is `null` without a discount, otherwise it contains the typed discount snapshot with `coupon`, `promotion_code`, `subtotal_amount`, `discount_amount`, `total_amount`, and `currency`; coupon API identifiers are exposed as `$invoice->discount->coupon->api_identifier`.
 
 ## Laravel Implementation Guidance
 
@@ -192,6 +212,9 @@ When changing the SDK itself:
 
 - Follow the existing pattern: DataObject, Request, Resource method, typed response DTO, and Pest coverage.
 - Keep request payload tests exact, especially for nullable fields that should be omitted.
-- Append new public DTO constructor parameters with safe defaults instead of inserting them before existing parameters.
+- Within a major version, append new public DTO constructor parameters with safe defaults instead of inserting them before existing parameters.
+- In SDK v2, type finite public API values as backed enum cases in DTOs and serialize them to backing values at request boundaries.
+- Hydrate additive response fields with backward-compatible fallbacks when older API responses omit them.
+- Do not add coupon or promotion-code management methods until the backend exposes public `/api/v1` endpoints for them.
 - Update `README.md` and `CHANGELOG.md` for new public SDK behavior.
 - Run `composer pint` after PHP edits and `composer test` before finishing.

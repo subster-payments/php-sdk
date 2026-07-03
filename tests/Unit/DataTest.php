@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Carbon\CarbonImmutable;
 use Subster\PhpSdk\Concerns\Collection;
 use Subster\PhpSdk\Concerns\Data;
 use Subster\PhpSdk\DataObjects\CheckoutSessionTrialData;
@@ -9,6 +10,7 @@ use Subster\PhpSdk\DataObjects\CheckoutSessionTrialDurationData;
 use Subster\PhpSdk\DataObjects\CreateCheckoutSessionItemData;
 use Subster\PhpSdk\DataObjects\CreateCheckoutSessionSubscriptionData;
 use Subster\PhpSdk\DataObjects\RecordSubscriptionUsageEventData;
+use Subster\PhpSdk\Enums\CheckoutSessionTrialInterval;
 
 it('serializes nested data objects', function () {
     $trial = CheckoutSessionTrialData::from([
@@ -128,6 +130,117 @@ it('hydrates nested data objects from arrays', function () {
             ],
         ]);
 });
+
+it('hydrates enum typed values from backing values', function () {
+    $data = new class(CheckoutSessionTrialInterval::Hour) extends Data
+    {
+        public function __construct(
+            public readonly CheckoutSessionTrialInterval $unit,
+        ) {}
+    };
+
+    $hydrated = $data::from([
+        'unit' => 'day',
+    ]);
+
+    expect($hydrated->unit)->toBe(CheckoutSessionTrialInterval::Day);
+});
+
+it('accepts enum cases while hydrating enum typed values', function () {
+    $data = new class(CheckoutSessionTrialInterval::Hour) extends Data
+    {
+        public function __construct(
+            public readonly CheckoutSessionTrialInterval $unit,
+        ) {}
+    };
+
+    $hydrated = $data::from([
+        'unit' => CheckoutSessionTrialInterval::Week,
+    ]);
+
+    expect($hydrated->unit)->toBe(CheckoutSessionTrialInterval::Week);
+});
+
+it('serializes enum cases recursively', function () {
+    $duration = CheckoutSessionTrialDurationData::from([
+        'unit' => CheckoutSessionTrialInterval::Month,
+        'count' => 1,
+    ]);
+
+    $collection = Collection::make([
+        $duration,
+        ['unit' => CheckoutSessionTrialInterval::Year],
+    ]);
+
+    $data = new class($duration, ['nested' => CheckoutSessionTrialInterval::Week], $collection) extends Data
+    {
+        public function __construct(
+            public readonly CheckoutSessionTrialDurationData $duration,
+            public readonly array $payload,
+            public readonly Collection $collection,
+        ) {}
+    };
+
+    expect($data->toArray())->toBe([
+        'duration' => [
+            'unit' => 'month',
+            'count' => 1,
+        ],
+        'payload' => [
+            'nested' => 'week',
+        ],
+        'collection' => [
+            [
+                'unit' => 'month',
+                'count' => 1,
+            ],
+            [
+                'unit' => 'year',
+            ],
+        ],
+    ]);
+});
+
+it('serializes date time values recursively as utc iso strings', function () {
+    $date = CarbonImmutable::parse('2026-01-16T13:30:00+03:00');
+    $collection = Collection::make([
+        ['occurred_at' => $date],
+    ]);
+
+    $data = new class($date, ['nested' => $date], $collection) extends Data
+    {
+        public function __construct(
+            public readonly CarbonImmutable $occurred_at,
+            public readonly array $payload,
+            public readonly Collection $collection,
+        ) {}
+    };
+
+    expect($data->toArray())->toBe([
+        'occurred_at' => '2026-01-16T10:30:00+00:00',
+        'payload' => [
+            'nested' => '2026-01-16T10:30:00+00:00',
+        ],
+        'collection' => [
+            [
+                'occurred_at' => '2026-01-16T10:30:00+00:00',
+            ],
+        ],
+    ]);
+});
+
+it('fails loudly for invalid enum backing values', function () {
+    $data = new class(CheckoutSessionTrialInterval::Hour) extends Data
+    {
+        public function __construct(
+            public readonly CheckoutSessionTrialInterval $unit,
+        ) {}
+    };
+
+    $data::from([
+        'unit' => 'minute',
+    ]);
+})->throws(ValueError::class);
 
 it('serializes checkout session items with optional quantity', function () {
     expect(CreateCheckoutSessionItemData::from([

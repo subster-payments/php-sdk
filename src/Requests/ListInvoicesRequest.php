@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Subster\PhpSdk\Requests;
 
+use DateTimeImmutable;
+use DateTimeInterface;
+use DateTimeZone;
 use Saloon\Enums\Method;
 use Saloon\Http\Request;
 use Saloon\Http\Response;
@@ -35,9 +38,20 @@ class ListInvoicesRequest extends Request
             'ending_before' => $this->filters?->ending_before,
             'customer' => $this->filters?->customer,
             'subscription' => $this->filters?->subscription,
-            'paid_at[gte]' => $this->filters?->paid_at_gte,
-            'paid_at[lte]' => $this->filters?->paid_at_lte,
+            'paid_at[gte]' => $this->formatDateFilter($this->filters?->paid_at_gte),
+            'paid_at[lte]' => $this->formatDateFilter($this->filters?->paid_at_lte),
         ], fn (mixed $value): bool => $value !== null);
+    }
+
+    private function formatDateFilter(DateTimeInterface|string|null $value): ?string
+    {
+        if ($value instanceof DateTimeInterface) {
+            return DateTimeImmutable::createFromInterface($value)
+                ->setTimezone(new DateTimeZone('UTC'))
+                ->format(DateTimeInterface::ATOM);
+        }
+
+        return $value;
     }
 
     public function createDtoFromResponse(Response $response): InvoiceListData

@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace Subster\PhpSdk\Concerns;
 
+use BackedEnum;
+use DateTimeImmutable;
+use DateTimeInterface;
+use DateTimeZone;
 use InvalidArgumentException;
 use ReflectionClass;
 use ReflectionNamedType;
@@ -47,11 +51,31 @@ class Data
 
     protected static function normalizeConstructorValue(?ReflectionType $type, mixed $value): mixed
     {
-        if ( ! $type instanceof ReflectionNamedType || $type->isBuiltin() || ! is_array($value)) {
+        if ($value === null || ! $type instanceof ReflectionNamedType) {
+            return $value;
+        }
+
+        if ($value instanceof BackedEnum && $type->isBuiltin()) {
+            return $value->value;
+        }
+
+        if ($type->isBuiltin()) {
             return $value;
         }
 
         $className = $type->getName();
+
+        if (enum_exists($className) && is_subclass_of($className, BackedEnum::class)) {
+            if ($value instanceof $className) {
+                return $value;
+            }
+
+            return $className::from($value);
+        }
+
+        if ( ! is_array($value)) {
+            return $value;
+        }
 
         if ( ! is_subclass_of($className, self::class)) {
             return $value;
@@ -70,6 +94,16 @@ class Data
 
     protected function normalizeValue(mixed $value): mixed
     {
+        if ($value instanceof BackedEnum) {
+            return $value->value;
+        }
+
+        if ($value instanceof DateTimeInterface) {
+            return DateTimeImmutable::createFromInterface($value)
+                ->setTimezone(new DateTimeZone('UTC'))
+                ->format(DateTimeInterface::ATOM);
+        }
+
         if ($value instanceof self) {
             return $value->toArray();
         }

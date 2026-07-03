@@ -1,17 +1,18 @@
 ---
 name: subster-sdk-development
-description: Maintain and extend the Subster PHP SDK. Use when adding or changing SDK endpoints, Saloon requests/resources, DTOs, response hydration, request serialization, Pest tests, README examples, CHANGELOG entries, or public SDK compatibility.
+description: Maintain and extend the Subster PHP SDK. Use when adding or changing SDK endpoints, Saloon requests/resources, DTOs, response hydration, request serialization, checkout promotion-code support, invoice discount data, Pest tests, README examples, CHANGELOG entries, or public SDK compatibility.
 ---
 
 # Subster SDK Development
 
-Use this skill when working inside `subster-payments/php-sdk` on the SDK itself. Keep runtime API changes small, additive, and aligned with the existing Saloon v4 resource/request structure.
+Use this skill when working inside `subster-payments/php-sdk` on the SDK itself. Keep runtime API changes small, aligned with the existing Saloon v4 resource/request structure, and explicit about SemVer when a major release intentionally changes DTO types.
 
 ## Start Here
 
 - Inspect sibling files before editing: similar `src/DataObjects/*Data.php`, `src/Requests/*Request.php`, `src/Resources/*Resource.php`, and matching `tests/Feature/*Test.php`.
 - Check the official API documentation at `https://subster.ru/docs/api#/` or the backend contract before inventing paths, fields, or response shapes.
 - Keep `SubsterConnector` as the entry point for SDK consumers. Add resource accessors only when a new resource surface is needed.
+- Do not add coupon or promotion-code CRUD resources unless the backend exposes versioned public API endpoints for them.
 - Do not invent webhook helpers unless the SDK already has one. Mention webhooks in docs only as part of the broader Subster integration and link to API docs.
 
 ## Implementation Pattern
@@ -24,11 +25,13 @@ Use this skill when working inside `subster-payments/php-sdk` on the SDK itself.
 
 ## Compatibility Rules
 
-- Treat public DTO constructors as part of the SDK contract. Do not reorder or insert parameters before existing ones.
+- Treat public DTO constructors as part of the SDK contract. Do not reorder or insert parameters before existing ones inside the same major version.
 - Add new DTO fields at the end of constructors with safe defaults such as `null`, `[]`, or a clearly optional value.
 - Preserve raw-array compatibility anywhere existing request DTOs or request normalizers accept arrays.
 - Use explicit `toArray()` methods when the wire payload must omit null optional fields or normalize nested DTO/raw-array input.
-- Keep enum-like API strings as API strings; do not translate class names, method names, or API field names.
+- In SDK v2, finite API values belong in backed enums under `Subster\PhpSdk\Enums`; request bodies must serialize enum cases to API backing values.
+- In SDK v2, response date properties should hydrate as `Carbon\CarbonImmutable`, request date inputs may accept `DateTimeInterface|string|null`, and public discount coupon identifiers are named `api_identifier`.
+- For additive response fields, keep hydration backward-compatible when older API responses omit the fields.
 
 ## Tests And Docs
 
@@ -43,7 +46,7 @@ Use this skill when working inside `subster-payments/php-sdk` on the SDK itself.
 ## Current SDK Surface
 
 - `customers()`
-- `checkoutSessions()`
+- `checkoutSessions()` with optional `promotion_code` during create
 - `billingPortalSessions()`
 - `subscriptions()`
-- `invoices()`
+- `invoices()` with typed `InvoiceData` discount snapshot fields

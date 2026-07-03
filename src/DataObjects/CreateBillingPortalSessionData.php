@@ -10,6 +10,6 @@ class CreateBillingPortalSessionData extends Data
 {
     public function __construct(
         public readonly string $customer,
-        public readonly ?string $return_url,
+        public readonly ?string $return_url = null,
     ) {}
 }

@@ -39,7 +39,7 @@ class ChangeSubscriptionPlanRequest extends Request implements HasBody
             'plan' => $this->data->plan,
             ...($this->data->success_url ? ['success_url' => $this->data->success_url] : []),
             ...($this->data->cancel_url ? ['cancel_url' => $this->data->cancel_url] : []),
-            ...($this->data->proration_behavior !== null ? ['proration_behavior' => $this->data->proration_behavior] : []),
+            ...($this->data->proration_behavior !== null ? ['proration_behavior' => $this->data->proration_behavior->value] : []),
         ];
     }
 

@@ -2,22 +2,24 @@
 
 declare(strict_types=1);
 
-use Carbon\Carbon;
+use Carbon\CarbonImmutable;
 use Saloon\Http\Faking\MockClient;
 use Saloon\Http\Faking\MockResponse;
 use Saloon\Http\Request;
 use Subster\PhpSdk\DataObjects\ChangeSubscriptionPlanData;
 use Subster\PhpSdk\DataObjects\SubscriptionPlanChangeData;
+use Subster\PhpSdk\Enums\SubscriptionPlanChangeMode;
+use Subster\PhpSdk\Enums\SubscriptionPlanChangeProrationBehavior;
 use Subster\PhpSdk\Requests\ChangeSubscriptionPlanRequest;
 use Subster\PhpSdk\SubsterConnector;
 
 it('sends subscription plan change checkout request body', function () {
     $mockClient = new MockClient([
         ChangeSubscriptionPlanRequest::class => MockResponse::make([
+            'id' => 'change-id',
             'mode' => 'checkout',
-            'change' => 'change-id',
-            'id' => 'checkout-session-id',
-            'url' => 'https://subster.test/checkout/checkout-session-id',
+            'checkout_session' => 'checkout-session-id',
+            'checkout_url' => 'https://subster.test/checkout/checkout-session-id',
             'amount_due' => 4750,
             'credit_amount' => 250,
             'effective_at' => '2026-01-16T00:00:00+00:00',
@@ -45,10 +47,10 @@ it('sends subscription plan change checkout request body', function () {
 it('omits optional checkout urls for scheduled subscription plan changes', function () {
     $mockClient = new MockClient([
         ChangeSubscriptionPlanRequest::class => MockResponse::make([
+            'id' => 'change-id',
             'mode' => 'scheduled',
-            'change' => 'change-id',
-            'id' => null,
-            'url' => null,
+            'checkout_session' => null,
+            'checkout_url' => null,
             'amount_due' => 0,
             'credit_amount' => 0,
             'effective_at' => '2026-02-01T00:00:00+00:00',
@@ -71,10 +73,10 @@ it('omits optional checkout urls for scheduled subscription plan changes', funct
 it('sends optional subscription plan change proration behavior', function () {
     $mockClient = new MockClient([
         ChangeSubscriptionPlanRequest::class => MockResponse::make([
+            'id' => 'change-id',
             'mode' => 'checkout',
-            'change' => 'change-id',
-            'id' => 'checkout-session-id',
-            'url' => 'https://subster.test/checkout/checkout-session-id',
+            'checkout_session' => 'checkout-session-id',
+            'checkout_url' => 'https://subster.test/checkout/checkout-session-id',
             'proration_behavior' => 'none',
             'amount_due' => 5000,
             'credit_amount' => 0,
@@ -88,7 +90,7 @@ it('sends optional subscription plan change proration behavior', function () {
     $connector->subscriptions()->changePlan('subscription-id', ChangeSubscriptionPlanData::from([
         'plan' => 'target-plan-id',
         'success_url' => 'https://example.ru/success',
-        'proration_behavior' => 'none',
+        'proration_behavior' => SubscriptionPlanChangeProrationBehavior::None,
     ]));
 
     $mockClient->assertSent(fn (Request $request): bool => $request instanceof ChangeSubscriptionPlanRequest
@@ -102,10 +104,10 @@ it('sends optional subscription plan change proration behavior', function () {
 it('returns subscription plan change data from a mocked Saloon response', function () {
     $mockClient = new MockClient([
         ChangeSubscriptionPlanRequest::class => MockResponse::make([
+            'id' => 'change-id',
             'mode' => 'checkout',
-            'change' => 'change-id',
-            'id' => 'checkout-session-id',
-            'url' => 'https://subster.test/checkout/checkout-session-id',
+            'checkout_session' => 'checkout-session-id',
+            'checkout_url' => 'https://subster.test/checkout/checkout-session-id',
             'proration_behavior' => 'none',
             'amount_due' => 4750,
             'credit_amount' => 250,
@@ -123,14 +125,14 @@ it('returns subscription plan change data from a mocked Saloon response', functi
 
     expect($change)
         ->toBeInstanceOf(SubscriptionPlanChangeData::class)
-        ->and($change->mode)->toBe('checkout')
-        ->and($change->change)->toBe('change-id')
-        ->and($change->id)->toBe('checkout-session-id')
-        ->and($change->url)->toBe('https://subster.test/checkout/checkout-session-id')
-        ->and($change->proration_behavior)->toBe('none')
+        ->and($change->mode)->toBe(SubscriptionPlanChangeMode::Checkout)
+        ->and($change->id)->toBe('change-id')
+        ->and($change->checkout_session)->toBe('checkout-session-id')
+        ->and($change->checkout_url)->toBe('https://subster.test/checkout/checkout-session-id')
+        ->and($change->proration_behavior)->toBe(SubscriptionPlanChangeProrationBehavior::None)
         ->and($change->amount_due)->toBe(4750.0)
         ->and($change->credit_amount)->toBe(250.0)
-        ->and($change->effective_at)->toBeInstanceOf(Carbon::class)
+        ->and($change->effective_at)->toBeInstanceOf(CarbonImmutable::class)
         ->and($change->effective_at->toIso8601String())->toBe('2026-01-16T00:00:00+00:00');
 
     $mockClient->assertSentCount(1, ChangeSubscriptionPlanRequest::class);
@@ -147,5 +149,8 @@ it('hydrates legacy subscription plan change responses without proration behavio
         'effective_at' => '2026-01-16T00:00:00+00:00',
     ]);
 
-    expect($change->proration_behavior)->toBeNull();
+    expect($change->id)->toBe('change-id')
+        ->and($change->checkout_session)->toBe('checkout-session-id')
+        ->and($change->checkout_url)->toBe('https://subster.test/checkout/checkout-session-id')
+        ->and($change->proration_behavior)->toBeNull();
 });

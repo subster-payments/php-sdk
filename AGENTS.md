@@ -11,7 +11,7 @@ These repo-local `.ai` skills are for SDK maintainers. Keep `resources/boost/ski
 
 ## SDK Rules
 
-- Preserve public compatibility. Do not reorder existing public DTO constructor parameters; append additive fields with safe defaults.
+- Preserve public compatibility within a major version. Do not reorder existing public DTO constructor parameters; append additive fields with safe defaults for non-breaking releases.
 - Preserve raw-array compatibility where request data already accepts arrays.
 - Follow the existing `DataObject + Request + Resource method + Pest tests + docs` pattern for new public API surfaces.
 - Prefer SDK methods over raw HTTP inside examples and tests.

@@ -33,12 +33,15 @@ class CreateCheckoutSessionRequest extends Request implements HasBody
 
     protected function defaultBody(): array
     {
+        $promotionCode = $this->promotionCode();
+
         return [
             'customer' => $this->data->customer,
             'items' => $this->items(),
             'success_url' => $this->data->success_url,
             ...($this->data->cancel_url ? ['cancel_url' => $this->data->cancel_url] : []),
             ...($this->data->subscription_data ? ['subscription_data' => $this->data->subscription_data->toArray()] : []),
+            ...($promotionCode !== null ? ['promotion_code' => $promotionCode] : []),
         ];
     }
 
@@ -61,6 +64,17 @@ class CreateCheckoutSessionRequest extends Request implements HasBody
         }
 
         return $item;
+    }
+
+    protected function promotionCode(): ?string
+    {
+        if ($this->data->promotion_code === null) {
+            return null;
+        }
+
+        $code = preg_replace('/^\s+|\s+$/u', '', $this->data->promotion_code) ?? $this->data->promotion_code;
+
+        return $code === '' ? null : $code;
     }
 
     public function createDtoFromResponse(Response $response): CheckoutSessionData

@@ -19,7 +19,7 @@
 ## Установка
 
 ```bash
-composer require subster-payments/php-sdk
+composer require subster-payments/php-sdk:^2.0
 ```
 
 ### Переход со старого имени пакета
@@ -28,10 +28,16 @@ composer require subster-payments/php-sdk
 
 ```bash
 composer remove subster/php-sdk --no-update
-composer require subster-payments/php-sdk:^1.0 -W
+composer require subster-payments/php-sdk:^2.0 -W
 ```
 
 Namespace SDK остается прежним: `Subster\PhpSdk`.
+
+### Переход с v1 на v2
+
+В v2 конечные значения API гидрируются в backed enum-ы SDK. Например, `$invoice->status` теперь возвращает `Subster\PhpSdk\Enums\InvoiceStatus::Paid`, а не строку `'paid'`. При создании DTO через `::from()` можно передавать как enum case, так и backing value; при прямом вызове constructor передавайте enum case.
+
+Response dates теперь возвращаются как `Carbon\CarbonImmutable`. `SubscriptionPlanChangeData` использует поля `$id`, `$checkout_session`, `$checkout_url`, а discount coupon field называется `$api_identifier`.
 
 ## Laravel Boost и AI skills
 
@@ -141,6 +147,23 @@ Raw arrays также поддерживаются:
 ],
 ```
 
+Если на checkout нужно сразу применить промокод, передайте `promotion_code`:
+
+```php
+$session = $subster->checkoutSessions()->create(
+    CreateCheckoutSessionData::from([
+        'customer' => 'customer-id',
+        'items' => [
+            [
+                'plan' => 'your-plan-id',
+            ],
+        ],
+        'promotion_code' => 'SUMMER25',
+        'success_url' => 'https://example.ru/billing/success',
+    ])
+);
+```
+
 Статус checkout-сессии можно получить по ее ID:
 
 ```php
@@ -156,6 +179,7 @@ use Subster\PhpSdk\DataObjects\CheckoutSessionTrialData;
 use Subster\PhpSdk\DataObjects\CheckoutSessionTrialDurationData;
 use Subster\PhpSdk\DataObjects\CreateCheckoutSessionData;
 use Subster\PhpSdk\DataObjects\CreateCheckoutSessionSubscriptionData;
+use Subster\PhpSdk\Enums\CheckoutSessionTrialInterval;
 
 $session = $subster->checkoutSessions()->create(
     CreateCheckoutSessionData::from([
@@ -169,7 +193,7 @@ $session = $subster->checkoutSessions()->create(
             'trial' => CheckoutSessionTrialData::from([
                 'amount' => 100,
                 'duration' => CheckoutSessionTrialDurationData::from([
-                    'unit' => 'day',
+                    'unit' => CheckoutSessionTrialInterval::Day,
                     'count' => 14,
                 ]),
             ]),
@@ -203,6 +227,7 @@ $portalSession = $subster->billingPortalSessions()->create(
 
 ```php
 use Subster\PhpSdk\DataObjects\ChangeSubscriptionPlanData;
+use Subster\PhpSdk\Enums\SubscriptionPlanChangeMode;
 
 $change = $subster->subscriptions()->changePlan(
     'subscription-id',
@@ -213,20 +238,22 @@ $change = $subster->subscriptions()->changePlan(
     ])
 );
 
-if ($change->mode === 'checkout') {
-    // Redirect the customer to $change->url.
+if ($change->mode === SubscriptionPlanChangeMode::Checkout && $change->checkout_url !== null) {
+    // Redirect the customer to $change->checkout_url.
 }
 ```
 
-По умолчанию Subster делает перерасчет при немедленном upgrade и учитывает неиспользованное время текущего периода. Для тарифов-пакетов, где клиент должен оплатить полную стоимость нового тарифа, передайте `proration_behavior: none`.
+По умолчанию Subster делает перерасчет при немедленном upgrade и учитывает неиспользованное время текущего периода. Для тарифов-пакетов, где клиент должен оплатить полную стоимость нового тарифа, передайте `SubscriptionPlanChangeProrationBehavior::None`.
 
 ```php
+use Subster\PhpSdk\Enums\SubscriptionPlanChangeProrationBehavior;
+
 $change = $subster->subscriptions()->changePlan(
     'subscription-id',
     ChangeSubscriptionPlanData::from([
         'plan' => 'larger-package-plan-id',
         'success_url' => 'https://example.ru/billing/success',
-        'proration_behavior' => 'none',
+        'proration_behavior' => SubscriptionPlanChangeProrationBehavior::None,
     ])
 );
 ```
@@ -257,7 +284,7 @@ $event = $subster->subscriptions()->recordUsage(
     'subscription-id',
     RecordSubscriptionUsageEventData::from([
         'quantity' => 35,
-        'occurred_at' => '2026-01-16T10:30:00+00:00',
+        'occurred_at' => now(),
         'idempotency_key' => 'tenant-users-2026-01-16',
         'metadata' => ['source' => 'tenant-admin'],
     ])
@@ -270,6 +297,7 @@ $event = $subster->subscriptions()->recordUsage(
 
 ```php
 use Subster\PhpSdk\DataObjects\ListInvoicesData;
+use Subster\PhpSdk\Enums\InvoiceStatus;
 
 $invoices = $subster->invoices()->all(ListInvoicesData::from([
     'customer' => 'customer-id',
@@ -280,8 +308,15 @@ $invoices = $subster->invoices()->all(ListInvoicesData::from([
 
 foreach ($invoices->data as $invoice) {
     // $invoice->customer, $invoice->subscription, and $invoice->items are included.
+    // $invoice->subtotal_amount, $invoice->discount_amount, and $invoice->discount show applied discounts.
+
+    if ($invoice->status === InvoiceStatus::Paid) {
+        // Sync paid invoice state.
+    }
 }
 ```
+
+`paid_at_gte`, `paid_at_lte` и `occurred_at` принимают `DateTimeInterface` или строку. Date-only строки вроде `2026-01-31` остаются строками, поэтому подходят для календарных фильтров.
 
 Если `$invoices->has_more` равен `true`, запросите следующую страницу с ID последнего счета:
 
@@ -289,6 +324,16 @@ foreach ($invoices->data as $invoice) {
 $nextPage = $subster->invoices()->all(ListInvoicesData::from([
     'starting_after' => $invoices->data->items[array_key_last($invoices->data->items)]->id,
 ]));
+```
+
+Поля `$invoice->subtotal_amount`, `$invoice->discount_amount` и `$invoice->discount` показывают примененную скидку. Если скидки нет, `$invoice->discount_amount` равен `0.0`, а `$invoice->discount` равен `null`.
+
+```php
+if ($invoice->discount) {
+    echo $invoice->discount->promotion_code->code;
+    echo $invoice->discount->coupon->name;
+    echo $invoice->discount->coupon->api_identifier;
+}
 ```
 
 Позиции счета содержат nullable поле `$item->pricing_model`. Для usage-based счетов metadata может включать детали backend meter и snapshot использования, по которому был сформирован счет.

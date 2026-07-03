@@ -11,6 +11,7 @@ use Subster\PhpSdk\DataObjects\CheckoutSessionTrialDurationData;
 use Subster\PhpSdk\DataObjects\CreateCheckoutSessionData;
 use Subster\PhpSdk\DataObjects\CreateCheckoutSessionItemData;
 use Subster\PhpSdk\DataObjects\CreateCheckoutSessionSubscriptionData;
+use Subster\PhpSdk\Enums\CheckoutSessionTrialInterval;
 use Subster\PhpSdk\Requests\CreateCheckoutSessionRequest;
 use Subster\PhpSdk\SubsterConnector;
 
@@ -82,6 +83,110 @@ it('sends checkout item quantity from raw arrays', function () {
                     ],
                 ],
                 'success_url' => 'https://example.ru/success',
+            ]);
+});
+
+it('sends checkout promotion code in request body', function () {
+    $mockClient = new MockClient([
+        CreateCheckoutSessionRequest::class => MockResponse::make([
+            'id' => 'checkout-session-id',
+            'url' => 'https://subster.test/checkout/checkout-session-id',
+        ]),
+    ]);
+
+    $connector = new SubsterConnector('test-token', 'https://subster.test/api/v1/');
+    $connector->withMockClient($mockClient);
+
+    $connector->checkoutSessions()->create(CreateCheckoutSessionData::from([
+        'customer' => 'customer-id',
+        'items' => [
+            [
+                'plan' => 'plan-id',
+            ],
+        ],
+        'success_url' => 'https://example.ru/success',
+        'promotion_code' => ' SUMMER25 ',
+    ]));
+
+    $mockClient->assertSent(fn (Request $request): bool => $request instanceof CreateCheckoutSessionRequest
+            && $request->body()->all() === [
+                'customer' => 'customer-id',
+                'items' => [
+                    [
+                        'plan' => 'plan-id',
+                    ],
+                ],
+                'success_url' => 'https://example.ru/success',
+                'promotion_code' => 'SUMMER25',
+            ]);
+});
+
+it('omits blank checkout promotion code from request body', function () {
+    $mockClient = new MockClient([
+        CreateCheckoutSessionRequest::class => MockResponse::make([
+            'id' => 'checkout-session-id',
+            'url' => 'https://subster.test/checkout/checkout-session-id',
+        ]),
+    ]);
+
+    $connector = new SubsterConnector('test-token', 'https://subster.test/api/v1/');
+    $connector->withMockClient($mockClient);
+
+    $connector->checkoutSessions()->create(CreateCheckoutSessionData::from([
+        'customer' => 'customer-id',
+        'items' => [
+            [
+                'plan' => 'plan-id',
+            ],
+        ],
+        'success_url' => 'https://example.ru/success',
+        'promotion_code' => '   ',
+    ]));
+
+    $mockClient->assertSent(fn (Request $request): bool => $request instanceof CreateCheckoutSessionRequest
+            && $request->body()->all() === [
+                'customer' => 'customer-id',
+                'items' => [
+                    [
+                        'plan' => 'plan-id',
+                    ],
+                ],
+                'success_url' => 'https://example.ru/success',
+            ]);
+});
+
+it('keeps zero-like checkout promotion code in request body', function () {
+    $mockClient = new MockClient([
+        CreateCheckoutSessionRequest::class => MockResponse::make([
+            'id' => 'checkout-session-id',
+            'url' => 'https://subster.test/checkout/checkout-session-id',
+        ]),
+    ]);
+
+    $connector = new SubsterConnector('test-token', 'https://subster.test/api/v1/');
+    $connector->withMockClient($mockClient);
+
+    $connector->checkoutSessions()->create(CreateCheckoutSessionData::from([
+        'customer' => 'customer-id',
+        'items' => [
+            [
+                'plan' => 'plan-id',
+            ],
+        ],
+        'success_url' => 'https://example.ru/success',
+        'promotion_code' => '0',
+    ]));
+
+    $mockClient->assertSent(fn (Request $request): bool => $request instanceof CreateCheckoutSessionRequest
+            && $request->body()->all() === [
+                'customer' => 'customer-id',
+                'items' => [
+                    [
+                        'plan' => 'plan-id',
+                    ],
+                ],
+                'success_url' => 'https://example.ru/success',
+                'promotion_code' => '0',
             ]);
 });
 
@@ -176,7 +281,7 @@ it('sends paid trial subscription data in checkout session request body', functi
             'trial' => CheckoutSessionTrialData::from([
                 'amount' => 100,
                 'duration' => CheckoutSessionTrialDurationData::from([
-                    'unit' => 'day',
+                    'unit' => CheckoutSessionTrialInterval::Day,
                     'count' => 14,
                 ]),
             ]),

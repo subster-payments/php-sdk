@@ -2,9 +2,17 @@
 
 All notable changes to `subster-payments/php-sdk` will be documented in this file.
 
-## Unreleased
+## v2.0.0 - 2026-07-03
 
 - Renamed the Composer package from `subster/php-sdk` to `subster-payments/php-sdk`.
+- Added checkout promotion code support and typed invoice discount data.
+- Added strict backed enum DTO fields for finite API values such as invoice status, checkout status, webhook event, plan type, pricing model, coupon discount type and duration, subscription plan change mode and proration behavior, trial interval, subscription status, and currency.
+- Breaking change: finite DTO string fields now hydrate as `Subster\PhpSdk\Enums\*` cases. Use enum cases for direct DTO construction and compare response fields with enum cases instead of raw strings.
+- Breaking change: response dates now hydrate as `Carbon\CarbonImmutable`.
+- Breaking change: `SubscriptionPlanChangeData` now exposes the plan change `id` plus nullable `checkout_session` and `checkout_url` fields.
+- Breaking change: invoice discount coupons now expose `api_identifier` instead of `api_id`.
+- Changed request date inputs such as invoice paid-at filters and subscription usage `occurred_at` to accept `DateTimeInterface|string|null`.
+- Changed `CustomerData::$name` to nullable and omitted null customer names from create requests.
 
 ## v1.0.2 - 2026-07-03
 

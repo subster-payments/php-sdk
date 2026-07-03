@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Subster\PhpSdk\DataObjects;
 
 use Subster\PhpSdk\Concerns\Data;
+use Subster\PhpSdk\Enums\CheckoutSessionStatus;
+use Subster\PhpSdk\Enums\WebhookEndpointEvent;
 
 class CheckoutSessionStatusData extends Data
 {
@@ -13,8 +15,8 @@ class CheckoutSessionStatusData extends Data
      */
     public function __construct(
         public readonly string $id,
-        public readonly string $status,
-        public readonly ?string $event,
+        public readonly CheckoutSessionStatus $status,
+        public readonly ?WebhookEndpointEvent $event,
         public readonly ?array $data,
     ) {}
 
@@ -22,8 +24,8 @@ class CheckoutSessionStatusData extends Data
     {
         return new self(
             id: strval($response['id']),
-            status: strval($response['status']),
-            event: isset($response['event']) ? strval($response['event']) : null,
+            status: CheckoutSessionStatus::from(strval($response['status'])),
+            event: isset($response['event']) ? WebhookEndpointEvent::from(strval($response['event'])) : null,
             data: isset($response['data']) && is_array($response['data']) ? $response['data'] : null,
         );
     }

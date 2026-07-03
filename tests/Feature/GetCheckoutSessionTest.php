@@ -6,6 +6,8 @@ use Saloon\Http\Faking\MockClient;
 use Saloon\Http\Faking\MockResponse;
 use Saloon\Http\Request;
 use Subster\PhpSdk\DataObjects\CheckoutSessionStatusData;
+use Subster\PhpSdk\Enums\CheckoutSessionStatus;
+use Subster\PhpSdk\Enums\WebhookEndpointEvent;
 use Subster\PhpSdk\Requests\GetCheckoutSessionRequest;
 use Subster\PhpSdk\SubsterConnector;
 
@@ -46,7 +48,7 @@ it('returns pending checkout session status data from a mocked Saloon response',
     expect($session)
         ->toBeInstanceOf(CheckoutSessionStatusData::class)
         ->and($session->id)->toBe('checkout-session-id')
-        ->and($session->status)->toBe('pending')
+        ->and($session->status)->toBe(CheckoutSessionStatus::Pending)
         ->and($session->event)->toBeNull()
         ->and($session->data)->toBeNull();
 });
@@ -78,8 +80,8 @@ it('returns completed checkout session event data from a mocked Saloon response'
     expect($session)
         ->toBeInstanceOf(CheckoutSessionStatusData::class)
         ->and($session->id)->toBe('checkout-session-id')
-        ->and($session->status)->toBe('completed')
-        ->and($session->event)->toBe('subscription.activated')
+        ->and($session->status)->toBe(CheckoutSessionStatus::Completed)
+        ->and($session->event)->toBe(WebhookEndpointEvent::SubscriptionActivated)
         ->and($session->data)->toBe($payload);
 });
 
@@ -89,6 +91,28 @@ it('returns completed one-time checkout session event data from a mocked Saloon 
         'invoice' => 'invoice-id',
         'customer' => 'customer-id',
         'amount' => 400,
+        'subtotal_amount' => 500,
+        'discount_amount' => 100,
+        'discount' => [
+            'coupon' => [
+                'id' => 'coupon-id',
+                'api_identifier' => null,
+                'name' => 'Summer Sale',
+                'discount_type' => 'fixed_amount',
+                'percent_off' => null,
+                'amount_off' => 100,
+                'duration' => 'once',
+                'duration_in_months' => null,
+            ],
+            'promotion_code' => [
+                'id' => 'promotion-code-id',
+                'code' => 'SUMMER100',
+            ],
+            'subtotal_amount' => 500,
+            'discount_amount' => 100,
+            'total_amount' => 400,
+            'currency' => 'RUB',
+        ],
         'currency' => 'RUB',
         'items' => [
             [
@@ -119,9 +143,11 @@ it('returns completed one-time checkout session event data from a mocked Saloon 
     expect($session)
         ->toBeInstanceOf(CheckoutSessionStatusData::class)
         ->and($session->id)->toBe('checkout-session-id')
-        ->and($session->status)->toBe('completed')
-        ->and($session->event)->toBe('checkout.session.completed')
+        ->and($session->status)->toBe(CheckoutSessionStatus::Completed)
+        ->and($session->event)->toBe(WebhookEndpointEvent::CheckoutSessionCompleted)
         ->and($session->data)->toBe($payload)
+        ->and($session->data['discount_amount'])->toBe(100)
+        ->and($session->data['discount']['promotion_code']['code'])->toBe('SUMMER100')
         ->and($session->data['items'][0]['quantity'])->toBe(5);
 });
 
