@@ -4,6 +4,10 @@ All notable changes to `subster/php-sdk` will be documented in this file.
 
 ## Unreleased
 
+## v1.0.2 - 2026-07-03
+
+- Removed the accidental `livewire/blaze` runtime dependency.
+
 ## v1.0.1 - 2026-07-03
 
 - Added repo-local AI skills for SDK development and release workflows.
