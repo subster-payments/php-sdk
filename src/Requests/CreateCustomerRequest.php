@@ -34,7 +34,7 @@ class CreateCustomerRequest extends Request implements HasBody
     {
         return [
             ...($this->data->name !== null ? ['name' => $this->data->name] : []),
-            'email' => $this->data->email,
+            ...($this->data->email !== null ? ['email' => $this->data->email] : []),
         ];
     }
 

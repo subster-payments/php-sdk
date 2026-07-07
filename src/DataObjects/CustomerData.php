@@ -13,7 +13,7 @@ class CustomerData extends Data
     public function __construct(
         public readonly string $id,
         public readonly ?string $name,
-        public readonly string $email,
+        public readonly ?string $email,
         public readonly DateTimeImmutable $created_at,
         public readonly DateTimeImmutable $updated_at,
     ) {}
@@ -23,7 +23,7 @@ class CustomerData extends Data
         return new self(
             id: strval($response['id']),
             name: isset($response['name']) ? strval($response['name']) : null,
-            email: strval($response['email']),
+            email: isset($response['email']) ? strval($response['email']) : null,
             created_at: DateTimeNormalizer::parse($response['created_at']),
             updated_at: DateTimeNormalizer::parse($response['updated_at']),
         );

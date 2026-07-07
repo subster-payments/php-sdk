@@ -2,6 +2,11 @@
 
 All notable changes to `subster-payments/php-sdk` will be documented in this file.
 
+## v2.0.2 - 2026-07-07
+
+- Changed customer creation so `email` is optional and null customer emails are omitted from create request bodies.
+- Changed `CustomerData::$email` and `InvoiceCustomerData::$email` to nullable.
+
 ## v2.0.1 - 2026-07-03
 
 - Replaced public response date DTO types from `Carbon\CarbonImmutable` with native `DateTimeImmutable`.

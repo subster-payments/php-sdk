@@ -35,6 +35,74 @@ it('omits null customer create name and hydrates nullable names', function () {
         ]);
 });
 
+it('omits email when creating a customer without email', function () {
+    $mockClient = new MockClient([
+        CreateCustomerRequest::class => MockResponse::make(customerResponse(['email' => null])),
+    ]);
+
+    $connector = new SubsterConnector('test-token', 'https://subster.test/api/v1/');
+    $connector->withMockClient($mockClient);
+
+    $customer = $connector->customers()->create(CreateCustomerData::from([]));
+
+    expect($customer)
+        ->toBeInstanceOf(CustomerData::class)
+        ->and($customer->email)->toBeNull();
+
+    $mockClient->assertSent(fn (Request $request): bool => $request instanceof CreateCustomerRequest
+        && $request->resolveEndpoint() === 'customers'
+        && $request->body()->all() === []);
+});
+
+it('omits null customer create email while sending name', function () {
+    $mockClient = new MockClient([
+        CreateCustomerRequest::class => MockResponse::make(customerResponse([
+            'name' => 'Acme',
+            'email' => null,
+        ])),
+    ]);
+
+    $connector = new SubsterConnector('test-token', 'https://subster.test/api/v1/');
+    $connector->withMockClient($mockClient);
+
+    $customer = $connector->customers()->create(CreateCustomerData::from([
+        'email' => null,
+        'name' => 'Acme',
+    ]));
+
+    expect($customer)
+        ->toBeInstanceOf(CustomerData::class)
+        ->and($customer->name)->toBe('Acme')
+        ->and($customer->email)->toBeNull();
+
+    $mockClient->assertSent(fn (Request $request): bool => $request instanceof CreateCustomerRequest
+        && $request->resolveEndpoint() === 'customers'
+        && $request->body()->all() === [
+            'name' => 'Acme',
+        ]);
+});
+
+it('hydrates customer data without email in the response', function () {
+    $response = customerResponse();
+
+    unset($response['email']);
+
+    $mockClient = new MockClient([
+        CreateCustomerRequest::class => MockResponse::make($response),
+    ]);
+
+    $connector = new SubsterConnector('test-token', 'https://subster.test/api/v1/');
+    $connector->withMockClient($mockClient);
+
+    $customer = $connector->customers()->create(CreateCustomerData::from([
+        'name' => 'Acme',
+    ]));
+
+    expect($customer)
+        ->toBeInstanceOf(CustomerData::class)
+        ->email->toBeNull();
+});
+
 it('sends customer update request body', function () {
     $mockClient = new MockClient([
         UpdateCustomerRequest::class => MockResponse::make(customerResponse()),

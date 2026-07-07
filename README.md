@@ -59,7 +59,7 @@ use Subster\PhpSdk\SubsterConnector;
 $subster = new SubsterConnector('your-api-key');
 ```
 
-Минимальный сценарий интеграции обычно состоит из двух шагов: создать клиента Subster и отправить его на hosted checkout для оплаты тарифа.
+Минимальный сценарий интеграции обычно состоит из двух шагов: создать клиента Subster и отправить его на hosted checkout для оплаты тарифа. Email клиента можно не передавать, если в вашем приложении его еще нет; Subster запросит email для чека на платежной странице или в billing portal при добавлении карты.
 
 ```php
 use Subster\PhpSdk\DataObjects\CreateCheckoutSessionData;
@@ -105,6 +105,12 @@ $customer = $subster->customers()->create(
     ])
 );
 
+$customerWithoutEmail = $subster->customers()->create(
+    CreateCustomerData::from([
+        'name' => 'Клиент без email',
+    ])
+);
+
 $updatedCustomer = $subster->customers()->update(
     UpdateCustomerData::from([
         'id' => $customer->id,
@@ -112,6 +118,8 @@ $updatedCustomer = $subster->customers()->update(
     ])
 );
 ```
+
+Если email передан как `null` или не указан, SDK не отправит поле `email` в запросе создания клиента. В обновлении клиента `email: null` также означает “не менять email”.
 
 ### Checkout-сессии
 

@@ -207,6 +207,24 @@ it('falls back when invoice response does not contain discount fields', function
         ->discount->toBeNull();
 });
 
+it('hydrates nullable invoice customer email', function () {
+    $response = invoiceListResponse();
+    $response['data'][0]['customer']['email'] = null;
+
+    $mockClient = new MockClient([
+        ListInvoicesRequest::class => MockResponse::make($response),
+    ]);
+
+    $connector = new SubsterConnector('test-token', 'https://subster.test/api/v1/');
+    $connector->withMockClient($mockClient);
+
+    $invoice = $connector->invoices()->all()->data->items[0];
+
+    expect($invoice->customer)
+        ->toBeInstanceOf(InvoiceCustomerData::class)
+        ->email->toBeNull();
+});
+
 it('hydrates legacy invoice coupon api id into api identifier', function () {
     $response = invoiceListResponse();
     $coupon = $response['data'][0]['discount']['coupon'];
