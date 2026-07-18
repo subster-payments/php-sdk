@@ -7,6 +7,7 @@ namespace Subster\PhpSdk\Enums;
 enum WebhookEndpointEvent: string
 {
     case CheckoutSessionCompleted = 'checkout.session.completed';
+    case CheckoutSessionClosed = 'checkout.session.closed';
     case SubscriptionActivated = 'subscription.activated';
     case SubscriptionRenewed = 'subscription.renewed';
     case SubscriptionChanged = 'subscription.changed';

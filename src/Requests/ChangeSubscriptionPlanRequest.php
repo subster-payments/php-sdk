@@ -40,7 +40,15 @@ class ChangeSubscriptionPlanRequest extends Request implements HasBody
             ...($this->data->success_url ? ['success_url' => $this->data->success_url] : []),
             ...($this->data->cancel_url ? ['cancel_url' => $this->data->cancel_url] : []),
             ...($this->data->proration_behavior !== null ? ['proration_behavior' => $this->data->proration_behavior->value] : []),
+            ...($this->data->payment_strategy !== null ? ['payment_strategy' => $this->data->payment_strategy->value] : []),
         ];
+    }
+
+    protected function defaultHeaders(): array
+    {
+        return $this->data->idempotency_key !== null
+            ? ['Idempotency-Key' => $this->data->idempotency_key]
+            : [];
     }
 
     public function createDtoFromResponse(Response $response): SubscriptionPlanChangeData

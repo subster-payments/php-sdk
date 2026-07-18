@@ -6,6 +6,7 @@ namespace Subster\PhpSdk\DataObjects;
 
 use DateTimeImmutable;
 use Subster\PhpSdk\Concerns\Data;
+use Subster\PhpSdk\Enums\CheckoutPaymentState;
 use Subster\PhpSdk\Enums\SubscriptionPlanChangeMode;
 use Subster\PhpSdk\Enums\SubscriptionPlanChangeProrationBehavior;
 use Subster\PhpSdk\Support\DateTimeNormalizer;
@@ -21,6 +22,8 @@ class SubscriptionPlanChangeData extends Data
         public readonly float $credit_amount,
         public readonly DateTimeImmutable $effective_at,
         public readonly ?SubscriptionPlanChangeProrationBehavior $proration_behavior = null,
+        public readonly CheckoutPaymentState $payment_state = CheckoutPaymentState::RequiresPayment,
+        public readonly bool $applied = false,
     ) {}
 
     public static function fromSaloon(array $response): self
@@ -40,6 +43,12 @@ class SubscriptionPlanChangeData extends Data
             credit_amount: floatval($response['credit_amount']),
             effective_at: DateTimeNormalizer::parse($response['effective_at']),
             proration_behavior: isset($response['proration_behavior']) ? SubscriptionPlanChangeProrationBehavior::from(strval($response['proration_behavior'])) : null,
+            payment_state: isset($response['payment_state'])
+                ? CheckoutPaymentState::from(strval($response['payment_state']))
+                : ((isset($response['checkout_url']) || isset($response['url']))
+                    ? CheckoutPaymentState::RequiresPayment
+                    : CheckoutPaymentState::Paid),
+            applied: boolval($response['applied'] ?? false),
         );
     }
 }

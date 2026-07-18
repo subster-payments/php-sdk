@@ -7,6 +7,8 @@ use Saloon\Http\Faking\MockResponse;
 use Saloon\Http\Request;
 use Subster\PhpSdk\DataObjects\ChangeSubscriptionPlanData;
 use Subster\PhpSdk\DataObjects\SubscriptionPlanChangeData;
+use Subster\PhpSdk\Enums\CheckoutPaymentState;
+use Subster\PhpSdk\Enums\PaymentStrategy;
 use Subster\PhpSdk\Enums\SubscriptionPlanChangeMode;
 use Subster\PhpSdk\Enums\SubscriptionPlanChangeProrationBehavior;
 use Subster\PhpSdk\Requests\ChangeSubscriptionPlanRequest;
@@ -151,5 +153,42 @@ it('hydrates legacy subscription plan change responses without proration behavio
     expect($change->id)->toBe('change-id')
         ->and($change->checkout_session)->toBe('checkout-session-id')
         ->and($change->checkout_url)->toBe('https://subster.test/checkout/checkout-session-id')
+        ->and($change->payment_state)->toBe(CheckoutPaymentState::RequiresPayment)
+        ->and($change->applied)->toBeFalse()
         ->and($change->proration_behavior)->toBeNull();
+});
+
+it('sends one click plan change strategy with an idempotency header', function (): void {
+    $mockClient = new MockClient([
+        ChangeSubscriptionPlanRequest::class => MockResponse::make([
+            'id' => 'change-id',
+            'mode' => 'checkout',
+            'checkout_session' => 'checkout-session-id',
+            'checkout_url' => null,
+            'payment_state' => 'paid',
+            'applied' => true,
+            'amount_due' => 1690,
+            'credit_amount' => 0,
+            'effective_at' => '2026-01-16T00:00:00+00:00',
+        ]),
+    ]);
+
+    $connector = new SubsterConnector('test-token', 'https://subster.test/api/v1/');
+    $connector->withMockClient($mockClient);
+
+    $change = $connector->subscriptions()->changePlan('subscription-id', ChangeSubscriptionPlanData::from([
+        'plan' => 'target-plan-id',
+        'success_url' => 'https://example.ru/success',
+        'payment_strategy' => PaymentStrategy::DefaultThenCheckout,
+        'idempotency_key' => 'upgrade-1',
+    ]));
+
+    expect($change)
+        ->payment_state->toBe(CheckoutPaymentState::Paid)
+        ->applied->toBeTrue()
+        ->checkout_url->toBeNull();
+
+    $mockClient->assertSent(fn (Request $request): bool => $request instanceof ChangeSubscriptionPlanRequest
+        && $request->body()->all()['payment_strategy'] === PaymentStrategy::DefaultThenCheckout->value
+        && $request->headers()->get('Idempotency-Key') === 'upgrade-1');
 });

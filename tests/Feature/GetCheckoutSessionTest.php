@@ -6,6 +6,7 @@ use Saloon\Http\Faking\MockClient;
 use Saloon\Http\Faking\MockResponse;
 use Saloon\Http\Request;
 use Subster\PhpSdk\DataObjects\CheckoutSessionStatusData;
+use Subster\PhpSdk\Enums\CheckoutPaymentState;
 use Subster\PhpSdk\Enums\CheckoutSessionStatus;
 use Subster\PhpSdk\Enums\WebhookEndpointEvent;
 use Subster\PhpSdk\Requests\GetCheckoutSessionRequest;
@@ -49,6 +50,8 @@ it('returns pending checkout session status data from a mocked Saloon response',
         ->toBeInstanceOf(CheckoutSessionStatusData::class)
         ->and($session->id)->toBe('checkout-session-id')
         ->and($session->status)->toBe(CheckoutSessionStatus::Pending)
+        ->and($session->payment_state)->toBe(CheckoutPaymentState::RequiresPayment)
+        ->and($session->checkout_url)->toBeNull()
         ->and($session->event)->toBeNull()
         ->and($session->data)->toBeNull();
 });
@@ -81,6 +84,8 @@ it('returns completed checkout session event data from a mocked Saloon response'
         ->toBeInstanceOf(CheckoutSessionStatusData::class)
         ->and($session->id)->toBe('checkout-session-id')
         ->and($session->status)->toBe(CheckoutSessionStatus::Completed)
+        ->and($session->payment_state)->toBe(CheckoutPaymentState::Paid)
+        ->and($session->checkout_url)->toBeNull()
         ->and($session->event)->toBe(WebhookEndpointEvent::SubscriptionActivated)
         ->and($session->data)->toBe($payload);
 });
@@ -189,3 +194,21 @@ it('preserves checkout session item pricing model in raw completed event data', 
         ->and($session->data['items'][0]['pricing_model'])->toBe('usage_based')
         ->and($session->data['items'][0]['quantity'])->toBe(20);
 });
+
+it('hydrates canceled and expired checkout terminal statuses', function (string $status): void {
+    $session = CheckoutSessionStatusData::fromSaloon([
+        'id' => 'checkout-session-id',
+        'status' => $status,
+        'payment_state' => 'requires_payment',
+        'checkout_url' => null,
+        'event' => 'checkout.session.closed',
+        'data' => ['status' => $status],
+    ]);
+
+    expect($session)
+        ->status->toBe(CheckoutSessionStatus::from($status))
+        ->payment_state->toBe(CheckoutPaymentState::RequiresPayment)
+        ->checkout_url->toBeNull()
+        ->event->toBe(WebhookEndpointEvent::CheckoutSessionClosed)
+        ->and($session->data['status'])->toBe($status);
+})->with(['canceled', 'expired']);

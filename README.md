@@ -19,7 +19,7 @@
 ## Установка
 
 ```bash
-composer require subster-payments/php-sdk:^2.0.1
+composer require subster-payments/php-sdk:^2.1
 ```
 
 ### Переход со старого имени пакета
@@ -28,7 +28,7 @@ composer require subster-payments/php-sdk:^2.0.1
 
 ```bash
 composer remove subster/php-sdk --no-update
-composer require subster-payments/php-sdk:^2.0.1 -W
+composer require subster-payments/php-sdk:^2.1 -W
 ```
 
 Namespace SDK остается прежним: `Subster\PhpSdk`.
@@ -85,7 +85,9 @@ $session = $subster->checkoutSessions()->create(
     ])
 );
 
-// Redirect the customer to $session->url.
+if ($session->checkout_url !== null) {
+    // Redirect the customer to $session->checkout_url.
+}
 ```
 
 ## Основные сценарии
@@ -178,6 +180,47 @@ $session = $subster->checkoutSessions()->create(
 $status = $subster->checkoutSessions()->get('checkout-session-id');
 ```
 
+Чтобы сначала попытаться списать оплату с основной карты, а при отказе продолжить через тот же hosted checkout, передайте стратегию и устойчивый ключ операции:
+
+```php
+use Subster\PhpSdk\Enums\CheckoutPaymentState;
+use Subster\PhpSdk\Enums\PaymentStrategy;
+
+$session = $subster->checkoutSessions()->create(
+    CreateCheckoutSessionData::from([
+        'customer' => 'customer-id',
+        'items' => [['plan' => 'your-one-time-plan-id', 'quantity' => 5]],
+        'success_url' => 'https://example.ru/billing/success',
+        'cancel_url' => 'https://example.ru/billing/cancel',
+        'payment_strategy' => PaymentStrategy::DefaultThenCheckout,
+        'idempotency_key' => 'top-up:customer-id:operation-id',
+    ])
+);
+
+if ($session->payment_state === CheckoutPaymentState::Paid) {
+    // Оплата и применение операции завершены синхронно.
+} elseif ($session->checkout_url !== null) {
+    // Основной карты нет или списание отклонено — откройте checkout_url.
+}
+```
+
+Для hosted checkout `$session->url` остается совместимым строковым alias URL оплаты. Новый код должен использовать nullable `$session->checkout_url`: при синхронной оплате перенаправление не требуется, поэтому `checkout_url` равен `null`, а legacy `url` — пустой строке.
+
+Повторяйте запрос только с тем же idempotency key и теми же параметрами операции.
+
+При опросе checkout-сессии обрабатывайте `Canceled` и `Expired` как terminal-состояния без оплаты. Для обоих состояний Subster возвращает событие `WebhookEndpointEvent::CheckoutSessionClosed` и исходный статус в payload:
+
+```php
+use Subster\PhpSdk\Enums\CheckoutSessionStatus;
+use Subster\PhpSdk\Enums\WebhookEndpointEvent;
+
+$status = $subster->checkoutSessions()->get('checkout-session-id');
+
+if (in_array($status->status, [CheckoutSessionStatus::Canceled, CheckoutSessionStatus::Expired], true)) {
+    assert($status->event === WebhookEndpointEvent::CheckoutSessionClosed);
+}
+```
+
 ### Платный trial
 
 Для подписок можно передать данные trial в `subscription_data`. Допустимые единицы длительности: `hour`, `day`, `week`, `month`, `year`.
@@ -229,6 +272,20 @@ $portalSession = $subster->billingPortalSessions()->create(
 // Redirect the customer to $portalSession->url.
 ```
 
+Для восстановления просроченного продления можно открыть сразу добавление новой основной карты. Subster немедленно повторит оплату и вернет пользователя по `return_url`:
+
+```php
+use Subster\PhpSdk\Enums\BillingPortalFlow;
+
+$portalSession = $subster->billingPortalSessions()->create(
+    CreateBillingPortalSessionData::from([
+        'customer' => 'customer-id',
+        'return_url' => 'https://example.ru/billing/recovered',
+        'flow' => BillingPortalFlow::PaymentRecovery,
+    ])
+);
+```
+
 ### Смена тарифа подписки
 
 `changePlan` меняет тариф подписки. Если требуется доплата, Subster вернет checkout URL.
@@ -236,6 +293,7 @@ $portalSession = $subster->billingPortalSessions()->create(
 ```php
 use Subster\PhpSdk\DataObjects\ChangeSubscriptionPlanData;
 use Subster\PhpSdk\Enums\SubscriptionPlanChangeMode;
+use Subster\PhpSdk\Enums\PaymentStrategy;
 
 $change = $subster->subscriptions()->changePlan(
     'subscription-id',
@@ -243,10 +301,14 @@ $change = $subster->subscriptions()->changePlan(
         'plan' => 'target-plan-id',
         'success_url' => 'https://example.ru/billing/success',
         'cancel_url' => 'https://example.ru/billing/cancel',
+        'payment_strategy' => PaymentStrategy::DefaultThenCheckout,
+        'idempotency_key' => 'plan-change:subscription-id:operation-id',
     ])
 );
 
-if ($change->mode === SubscriptionPlanChangeMode::Checkout && $change->checkout_url !== null) {
+if ($change->applied) {
+    // Сохраненная карта была успешно списана, тариф уже изменен.
+} elseif ($change->mode === SubscriptionPlanChangeMode::Checkout && $change->checkout_url !== null) {
     // Redirect the customer to $change->checkout_url.
 }
 ```

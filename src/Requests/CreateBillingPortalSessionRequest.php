@@ -35,6 +35,7 @@ class CreateBillingPortalSessionRequest extends Request implements HasBody
         return [
             'customer' => $this->data->customer,
             ...($this->data->return_url ? ['return_url' => $this->data->return_url] : []),
+            ...($this->data->flow !== null ? ['flow' => $this->data->flow->value] : []),
         ];
     }
 

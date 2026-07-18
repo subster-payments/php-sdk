@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Subster\PhpSdk\DataObjects;
 
 use Subster\PhpSdk\Concerns\Data;
+use Subster\PhpSdk\Enums\PaymentStrategy;
 
 class CreateCheckoutSessionData extends Data
 {
@@ -18,5 +19,7 @@ class CreateCheckoutSessionData extends Data
         public readonly ?string $cancel_url = null,
         public readonly ?CreateCheckoutSessionSubscriptionData $subscription_data = null,
         public readonly ?string $promotion_code = null,
+        public readonly ?PaymentStrategy $payment_strategy = null,
+        public readonly ?string $idempotency_key = null,
     ) {}
 }

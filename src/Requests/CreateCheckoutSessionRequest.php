@@ -42,7 +42,15 @@ class CreateCheckoutSessionRequest extends Request implements HasBody
             ...($this->data->cancel_url ? ['cancel_url' => $this->data->cancel_url] : []),
             ...($this->data->subscription_data ? ['subscription_data' => $this->data->subscription_data->toArray()] : []),
             ...($promotionCode !== null ? ['promotion_code' => $promotionCode] : []),
+            ...($this->data->payment_strategy !== null ? ['payment_strategy' => $this->data->payment_strategy->value] : []),
         ];
+    }
+
+    protected function defaultHeaders(): array
+    {
+        return $this->data->idempotency_key !== null
+            ? ['Idempotency-Key' => $this->data->idempotency_key]
+            : [];
     }
 
     protected function items(): array

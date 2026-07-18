@@ -11,7 +11,9 @@ use Subster\PhpSdk\DataObjects\CheckoutSessionTrialDurationData;
 use Subster\PhpSdk\DataObjects\CreateCheckoutSessionData;
 use Subster\PhpSdk\DataObjects\CreateCheckoutSessionItemData;
 use Subster\PhpSdk\DataObjects\CreateCheckoutSessionSubscriptionData;
+use Subster\PhpSdk\Enums\CheckoutPaymentState;
 use Subster\PhpSdk\Enums\CheckoutSessionTrialInterval;
+use Subster\PhpSdk\Enums\PaymentStrategy;
 use Subster\PhpSdk\Requests\CreateCheckoutSessionRequest;
 use Subster\PhpSdk\SubsterConnector;
 
@@ -337,7 +339,49 @@ it('returns checkout session data from a mocked Saloon response', function () {
     expect($session)
         ->toBeInstanceOf(CheckoutSessionData::class)
         ->and($session->id)->toBe('checkout-session-id')
-        ->and($session->url)->toBe('https://subster.test/checkout/checkout-session-id');
+        ->and($session->url)->toBe('https://subster.test/checkout/checkout-session-id')
+        ->and($session->checkout_url)->toBe('https://subster.test/checkout/checkout-session-id')
+        ->and($session->payment_state)->toBe(CheckoutPaymentState::RequiresPayment);
 
     $mockClient->assertSentCount(1, CreateCheckoutSessionRequest::class);
+});
+
+it('sends default then checkout strategy and idempotency header', function (): void {
+    $mockClient = new MockClient([
+        CreateCheckoutSessionRequest::class => MockResponse::make([
+            'id' => 'checkout-session-id',
+            'payment_state' => 'requires_payment',
+            'checkout_url' => 'https://subster.test/checkout/checkout-session-id',
+            'url' => 'https://subster.test/checkout/checkout-session-id',
+        ]),
+    ]);
+
+    $connector = new SubsterConnector('test-token', 'https://subster.test/api/v1/');
+    $connector->withMockClient($mockClient);
+
+    $connector->checkoutSessions()->create(CreateCheckoutSessionData::from([
+        'customer' => 'customer-id',
+        'items' => [['plan' => 'plan-id', 'quantity' => 5]],
+        'success_url' => 'https://example.ru/success',
+        'payment_strategy' => PaymentStrategy::DefaultThenCheckout,
+        'idempotency_key' => 'top-up-1',
+    ]));
+
+    $mockClient->assertSent(fn (Request $request): bool => $request instanceof CreateCheckoutSessionRequest
+        && $request->body()->all()['payment_strategy'] === PaymentStrategy::DefaultThenCheckout->value
+        && $request->headers()->get('Idempotency-Key') === 'top-up-1');
+});
+
+it('hydrates a synchronously paid checkout without a redirect url', function (): void {
+    $session = CheckoutSessionData::fromSaloon([
+        'id' => 'checkout-session-id',
+        'url' => null,
+        'checkout_url' => null,
+        'payment_state' => 'paid',
+    ]);
+
+    expect($session)
+        ->payment_state->toBe(CheckoutPaymentState::Paid)
+        ->checkout_url->toBeNull()
+        ->url->toBe('');
 });

@@ -2,6 +2,16 @@
 
 All notable changes to `subster-payments/php-sdk` will be documented in this file.
 
+## v2.1.0 - 2026-07-18
+
+- Added `PaymentStrategy::DefaultThenCheckout` for checkout creation and subscription plan changes.
+- Added idempotency keys for checkout creation and subscription plan changes through the `Idempotency-Key` request header.
+- Added typed `payment_state`, nullable `checkout_url`, and synchronous `applied` plan-change results.
+- Added `BillingPortalFlow::PaymentRecovery` for direct card recovery sessions.
+- Added canceled and expired checkout terminal statuses plus `checkout.session.closed` webhook support.
+- Preserved the legacy string type and hosted checkout hydration of `CheckoutSessionData::$url` plus existing DTO construction defaults.
+- Preserved the existing connector base URL, Bearer authentication, and 300-second request timeout.
+
 ## v2.0.2 - 2026-07-07
 
 - Changed customer creation so `email` is optional and null customer emails are omitted from create request bodies.
