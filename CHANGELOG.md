@@ -2,6 +2,12 @@
 
 All notable changes to `subster-payments/php-sdk` will be documented in this file.
 
+## v2.2.0 - 2026-07-19
+
+- Added typed nullable `payment_attempt_state` to checkout creation, checkout status, and subscription plan-change responses.
+- Added nullable invoice `amount` and `currency` snapshots to checkout response DTOs, plus nullable `currency` to plan-change results.
+- Preserved compatibility with older Subster responses by leaving all new fields `null` when they are absent.
+
 ## v2.1.0 - 2026-07-18
 
 - Added `PaymentStrategy::DefaultThenCheckout` for checkout creation and subscription plan changes.

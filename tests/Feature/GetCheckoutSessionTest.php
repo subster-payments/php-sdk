@@ -6,6 +6,7 @@ use Saloon\Http\Faking\MockClient;
 use Saloon\Http\Faking\MockResponse;
 use Saloon\Http\Request;
 use Subster\PhpSdk\DataObjects\CheckoutSessionStatusData;
+use Subster\PhpSdk\Enums\CheckoutPaymentAttemptState;
 use Subster\PhpSdk\Enums\CheckoutPaymentState;
 use Subster\PhpSdk\Enums\CheckoutSessionStatus;
 use Subster\PhpSdk\Enums\WebhookEndpointEvent;
@@ -88,6 +89,26 @@ it('returns completed checkout session event data from a mocked Saloon response'
         ->and($session->checkout_url)->toBeNull()
         ->and($session->event)->toBe(WebhookEndpointEvent::SubscriptionActivated)
         ->and($session->data)->toBe($payload);
+});
+
+it('hydrates a processing payment attempt with its invoice snapshot', function (): void {
+    $session = CheckoutSessionStatusData::fromSaloon([
+        'id' => 'checkout-session-id',
+        'status' => 'pending',
+        'payment_state' => 'requires_payment',
+        'payment_attempt_state' => 'processing',
+        'checkout_url' => null,
+        'amount' => 390,
+        'currency' => 'RUB',
+        'event' => null,
+        'data' => null,
+    ]);
+
+    expect($session)
+        ->payment_attempt_state->toBe(CheckoutPaymentAttemptState::Processing)
+        ->amount->toBe(390.0)
+        ->currency->toBe('RUB')
+        ->checkout_url->toBeNull();
 });
 
 it('returns completed one-time checkout session event data from a mocked Saloon response', function () {

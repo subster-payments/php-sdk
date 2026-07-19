@@ -6,6 +6,7 @@ namespace Subster\PhpSdk\DataObjects;
 
 use DateTimeImmutable;
 use Subster\PhpSdk\Concerns\Data;
+use Subster\PhpSdk\Enums\CheckoutPaymentAttemptState;
 use Subster\PhpSdk\Enums\CheckoutPaymentState;
 use Subster\PhpSdk\Enums\SubscriptionPlanChangeMode;
 use Subster\PhpSdk\Enums\SubscriptionPlanChangeProrationBehavior;
@@ -24,6 +25,8 @@ class SubscriptionPlanChangeData extends Data
         public readonly ?SubscriptionPlanChangeProrationBehavior $proration_behavior = null,
         public readonly CheckoutPaymentState $payment_state = CheckoutPaymentState::RequiresPayment,
         public readonly bool $applied = false,
+        public readonly ?CheckoutPaymentAttemptState $payment_attempt_state = null,
+        public readonly ?string $currency = null,
     ) {}
 
     public static function fromSaloon(array $response): self
@@ -49,6 +52,10 @@ class SubscriptionPlanChangeData extends Data
                     ? CheckoutPaymentState::RequiresPayment
                     : CheckoutPaymentState::Paid),
             applied: boolval($response['applied'] ?? false),
+            payment_attempt_state: isset($response['payment_attempt_state'])
+                ? CheckoutPaymentAttemptState::from(strval($response['payment_attempt_state']))
+                : null,
+            currency: isset($response['currency']) ? strval($response['currency']) : null,
         );
     }
 }

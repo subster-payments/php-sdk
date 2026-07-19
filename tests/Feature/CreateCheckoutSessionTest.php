@@ -11,6 +11,7 @@ use Subster\PhpSdk\DataObjects\CheckoutSessionTrialDurationData;
 use Subster\PhpSdk\DataObjects\CreateCheckoutSessionData;
 use Subster\PhpSdk\DataObjects\CreateCheckoutSessionItemData;
 use Subster\PhpSdk\DataObjects\CreateCheckoutSessionSubscriptionData;
+use Subster\PhpSdk\Enums\CheckoutPaymentAttemptState;
 use Subster\PhpSdk\Enums\CheckoutPaymentState;
 use Subster\PhpSdk\Enums\CheckoutSessionTrialInterval;
 use Subster\PhpSdk\Enums\PaymentStrategy;
@@ -351,7 +352,10 @@ it('sends default then checkout strategy and idempotency header', function (): v
         CreateCheckoutSessionRequest::class => MockResponse::make([
             'id' => 'checkout-session-id',
             'payment_state' => 'requires_payment',
+            'payment_attempt_state' => 'failed',
             'checkout_url' => 'https://subster.test/checkout/checkout-session-id',
+            'amount' => 400,
+            'currency' => 'RUB',
             'url' => 'https://subster.test/checkout/checkout-session-id',
         ]),
     ]);
@@ -359,13 +363,18 @@ it('sends default then checkout strategy and idempotency header', function (): v
     $connector = new SubsterConnector('test-token', 'https://subster.test/api/v1/');
     $connector->withMockClient($mockClient);
 
-    $connector->checkoutSessions()->create(CreateCheckoutSessionData::from([
+    $session = $connector->checkoutSessions()->create(CreateCheckoutSessionData::from([
         'customer' => 'customer-id',
         'items' => [['plan' => 'plan-id', 'quantity' => 5]],
         'success_url' => 'https://example.ru/success',
         'payment_strategy' => PaymentStrategy::DefaultThenCheckout,
         'idempotency_key' => 'top-up-1',
     ]));
+
+    expect($session)
+        ->payment_attempt_state->toBe(CheckoutPaymentAttemptState::Failed)
+        ->amount->toBe(400.0)
+        ->currency->toBe('RUB');
 
     $mockClient->assertSent(fn (Request $request): bool => $request instanceof CreateCheckoutSessionRequest
         && $request->body()->all()['payment_strategy'] === PaymentStrategy::DefaultThenCheckout->value
@@ -378,10 +387,16 @@ it('hydrates a synchronously paid checkout without a redirect url', function ():
         'url' => null,
         'checkout_url' => null,
         'payment_state' => 'paid',
+        'payment_attempt_state' => 'succeeded',
+        'amount' => 390,
+        'currency' => 'RUB',
     ]);
 
     expect($session)
         ->payment_state->toBe(CheckoutPaymentState::Paid)
+        ->payment_attempt_state->toBe(CheckoutPaymentAttemptState::Succeeded)
+        ->amount->toBe(390.0)
+        ->currency->toBe('RUB')
         ->checkout_url->toBeNull()
         ->url->toBe('');
 });

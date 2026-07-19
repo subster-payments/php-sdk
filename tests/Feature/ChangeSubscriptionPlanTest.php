@@ -7,6 +7,7 @@ use Saloon\Http\Faking\MockResponse;
 use Saloon\Http\Request;
 use Subster\PhpSdk\DataObjects\ChangeSubscriptionPlanData;
 use Subster\PhpSdk\DataObjects\SubscriptionPlanChangeData;
+use Subster\PhpSdk\Enums\CheckoutPaymentAttemptState;
 use Subster\PhpSdk\Enums\CheckoutPaymentState;
 use Subster\PhpSdk\Enums\PaymentStrategy;
 use Subster\PhpSdk\Enums\SubscriptionPlanChangeMode;
@@ -154,6 +155,8 @@ it('hydrates legacy subscription plan change responses without proration behavio
         ->and($change->checkout_session)->toBe('checkout-session-id')
         ->and($change->checkout_url)->toBe('https://subster.test/checkout/checkout-session-id')
         ->and($change->payment_state)->toBe(CheckoutPaymentState::RequiresPayment)
+        ->and($change->payment_attempt_state)->toBeNull()
+        ->and($change->currency)->toBeNull()
         ->and($change->applied)->toBeFalse()
         ->and($change->proration_behavior)->toBeNull();
 });
@@ -166,8 +169,10 @@ it('sends one click plan change strategy with an idempotency header', function (
             'checkout_session' => 'checkout-session-id',
             'checkout_url' => null,
             'payment_state' => 'paid',
+            'payment_attempt_state' => 'succeeded',
             'applied' => true,
             'amount_due' => 1690,
+            'currency' => 'RUB',
             'credit_amount' => 0,
             'effective_at' => '2026-01-16T00:00:00+00:00',
         ]),
@@ -185,6 +190,8 @@ it('sends one click plan change strategy with an idempotency header', function (
 
     expect($change)
         ->payment_state->toBe(CheckoutPaymentState::Paid)
+        ->payment_attempt_state->toBe(CheckoutPaymentAttemptState::Succeeded)
+        ->currency->toBe('RUB')
         ->applied->toBeTrue()
         ->checkout_url->toBeNull();
 

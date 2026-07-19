@@ -9,6 +9,7 @@ use Subster\PhpSdk\DataObjects\CreateBillingPortalSessionData;
 use Subster\PhpSdk\DataObjects\CreateCheckoutSessionData;
 use Subster\PhpSdk\DataObjects\SubscriptionPlanChangeData;
 use Subster\PhpSdk\Enums\BillingPortalFlow;
+use Subster\PhpSdk\Enums\CheckoutPaymentAttemptState;
 use Subster\PhpSdk\Enums\CheckoutPaymentState;
 use Subster\PhpSdk\Enums\CheckoutSessionStatus;
 use Subster\PhpSdk\Enums\PaymentStrategy;
@@ -59,9 +60,17 @@ it('keeps legacy positional constructor calls compatible', function (): void {
         ->and($portalRequest->flow)->toBeNull()
         ->and($checkout->payment_state)->toBe(CheckoutPaymentState::RequiresPayment)
         ->and($checkout->checkout_url)->toBeNull()
+        ->and($checkout->payment_attempt_state)->toBeNull()
+        ->and($checkout->amount)->toBeNull()
+        ->and($checkout->currency)->toBeNull()
         ->and($status->payment_state)->toBe(CheckoutPaymentState::RequiresPayment)
         ->and($status->checkout_url)->toBeNull()
+        ->and($status->payment_attempt_state)->toBeNull()
+        ->and($status->amount)->toBeNull()
+        ->and($status->currency)->toBeNull()
         ->and($planChange->payment_state)->toBe(CheckoutPaymentState::RequiresPayment)
+        ->and($planChange->payment_attempt_state)->toBeNull()
+        ->and($planChange->currency)->toBeNull()
         ->and($planChange->applied)->toBeFalse();
 
     $legacyUrlType = (new ReflectionProperty(CheckoutSessionData::class, 'url'))->getType();
@@ -142,6 +151,11 @@ it('matches finite API values', function (): void {
     ])->and(array_column(CheckoutPaymentState::cases(), 'value'))->toBe([
         'paid',
         'requires_payment',
+    ])->and(array_column(CheckoutPaymentAttemptState::cases(), 'value'))->toBe([
+        'not_attempted',
+        'processing',
+        'failed',
+        'succeeded',
     ])->and(array_column(CheckoutSessionStatus::cases(), 'value'))->toBe([
         'pending',
         'completed',

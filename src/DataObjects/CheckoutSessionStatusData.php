@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Subster\PhpSdk\DataObjects;
 
 use Subster\PhpSdk\Concerns\Data;
+use Subster\PhpSdk\Enums\CheckoutPaymentAttemptState;
 use Subster\PhpSdk\Enums\CheckoutPaymentState;
 use Subster\PhpSdk\Enums\CheckoutSessionStatus;
 use Subster\PhpSdk\Enums\WebhookEndpointEvent;
@@ -21,6 +22,9 @@ class CheckoutSessionStatusData extends Data
         public readonly ?array $data,
         public readonly CheckoutPaymentState $payment_state = CheckoutPaymentState::RequiresPayment,
         public readonly ?string $checkout_url = null,
+        public readonly ?CheckoutPaymentAttemptState $payment_attempt_state = null,
+        public readonly ?float $amount = null,
+        public readonly ?string $currency = null,
     ) {}
 
     public static function fromSaloon(array $response): self
@@ -36,6 +40,11 @@ class CheckoutSessionStatusData extends Data
                     ? CheckoutPaymentState::Paid
                     : CheckoutPaymentState::RequiresPayment),
             checkout_url: isset($response['checkout_url']) ? strval($response['checkout_url']) : null,
+            payment_attempt_state: isset($response['payment_attempt_state'])
+                ? CheckoutPaymentAttemptState::from(strval($response['payment_attempt_state']))
+                : null,
+            amount: isset($response['amount']) ? floatval($response['amount']) : null,
+            currency: isset($response['currency']) ? strval($response['currency']) : null,
         );
     }
 }

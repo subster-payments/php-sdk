@@ -19,7 +19,7 @@
 ## Установка
 
 ```bash
-composer require subster-payments/php-sdk:^2.1
+composer require subster-payments/php-sdk:^2.2
 ```
 
 ### Переход со старого имени пакета
@@ -28,7 +28,7 @@ composer require subster-payments/php-sdk:^2.1
 
 ```bash
 composer remove subster/php-sdk --no-update
-composer require subster-payments/php-sdk:^2.1 -W
+composer require subster-payments/php-sdk:^2.2 -W
 ```
 
 Namespace SDK остается прежним: `Subster\PhpSdk`.
@@ -183,6 +183,7 @@ $status = $subster->checkoutSessions()->get('checkout-session-id');
 Чтобы сначала попытаться списать оплату с основной карты, а при отказе продолжить через тот же hosted checkout, передайте стратегию и устойчивый ключ операции:
 
 ```php
+use Subster\PhpSdk\Enums\CheckoutPaymentAttemptState;
 use Subster\PhpSdk\Enums\CheckoutPaymentState;
 use Subster\PhpSdk\Enums\PaymentStrategy;
 
@@ -199,10 +200,16 @@ $session = $subster->checkoutSessions()->create(
 
 if ($session->payment_state === CheckoutPaymentState::Paid) {
     // Оплата и применение операции завершены синхронно.
-} elseif ($session->checkout_url !== null) {
-    // Основной карты нет или списание отклонено — откройте checkout_url.
+} elseif ($session->payment_attempt_state === CheckoutPaymentAttemptState::NotAttempted && $session->checkout_url !== null) {
+    // Пригодной основной карты нет — сразу откройте checkout_url.
+} elseif ($session->payment_attempt_state === CheckoutPaymentAttemptState::Failed && $session->checkout_url !== null) {
+    // Списание подтверждённо отклонено — предложите тот же checkout_url для другой карты.
+} elseif ($session->payment_attempt_state === CheckoutPaymentAttemptState::Processing) {
+    // Результат списания уточняется — опрашивайте эту же сессию и не создавайте новую.
 }
 ```
+
+`$session->amount` и `$session->currency` содержат фактическую сумму и валюту созданного invoice. У старого Subster новые поля, включая `$session->payment_attempt_state`, остаются `null`; SDK не угадывает причину по наличию URL.
 
 Для hosted checkout `$session->url` остается совместимым строковым alias URL оплаты. Новый код должен использовать nullable `$session->checkout_url`: при синхронной оплате перенаправление не требуется, поэтому `checkout_url` равен `null`, а legacy `url` — пустой строке.
 
