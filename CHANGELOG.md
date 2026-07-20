@@ -2,6 +2,12 @@
 
 All notable changes to `subster-payments/php-sdk` will be documented in this file.
 
+## v2.3.0 - 2026-07-20
+
+- Added `checkoutSessions()->cancel(string $session): CheckoutSessionStatusData` for idempotent cancellation of unpaid checkout sessions.
+- Added the typed `DELETE checkout/session/{session}` Saloon request and response DTO hydration.
+- Preserved existing checkout creation and polling APIs without signature changes.
+
 ## v2.2.0 - 2026-07-19
 
 - Added typed nullable `payment_attempt_state` to checkout creation, checkout status, and subscription plan-change responses.

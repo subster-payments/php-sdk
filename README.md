@@ -180,6 +180,14 @@ $session = $subster->checkoutSessions()->create(
 $status = $subster->checkoutSessions()->get('checkout-session-id');
 ```
 
+Неоплаченную checkout-сессию без обрабатываемой транзакции можно безопасно отменить. Повторный запрос для уже отменённой или истёкшей сессии возвращает то же terminal-состояние:
+
+```php
+$status = $subster->checkoutSessions()->cancel('checkout-session-id');
+```
+
+Для оплаченной, завершённой или обрабатываемой сессии Subster вернёт конфликт API, а SDK выбросит `RequestException`. Перед созданием замещающей оплаты дождитесь подтверждённого статуса `Canceled` или `Expired`.
+
 Чтобы сначала попытаться списать оплату с основной карты, а при отказе продолжить через тот же hosted checkout, передайте стратегию и устойчивый ключ операции:
 
 ```php
