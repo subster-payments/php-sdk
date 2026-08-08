@@ -13,4 +13,13 @@ class CreateInvoiceRefundData extends Data
         public readonly string $idempotencyKey,
         public readonly ?float $amount = null,
     ) {}
+
+    public static function from(array $data = []): static
+    {
+        if ( ! array_key_exists('idempotencyKey', $data) && array_key_exists('idempotency_key', $data)) {
+            $data['idempotencyKey'] = $data['idempotency_key'];
+        }
+
+        return parent::from($data);
+    }
 }

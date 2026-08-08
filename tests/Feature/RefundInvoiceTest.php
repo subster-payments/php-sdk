@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Saloon\Enums\Method;
 use Saloon\Exceptions\Request\RequestException;
 use Saloon\Http\Faking\MockClient;
 use Saloon\Http\Faking\MockResponse;
@@ -12,6 +13,25 @@ use Subster\PhpSdk\Enums\Currency;
 use Subster\PhpSdk\Enums\RefundStatus;
 use Subster\PhpSdk\Requests\CreateInvoiceRefundRequest;
 use Subster\PhpSdk\SubsterConnector;
+
+it('accepts a snake case refund idempotency key from raw data', function () {
+    $mockClient = new MockClient([
+        CreateInvoiceRefundRequest::class => MockResponse::make(refundResponse(), 201),
+    ]);
+    $connector = new SubsterConnector('test-token', 'https://subster.test/api/v1/');
+    $connector->withMockClient($mockClient);
+
+    $connector->invoices()->refund('invoice-id', CreateInvoiceRefundData::from([
+        'amount' => 500,
+        'reason' => 'Customer request',
+        'idempotency_key' => 'refund-operation-id',
+    ]));
+
+    $mockClient->assertSent(fn (Request $request): bool => $request instanceof CreateInvoiceRefundRequest
+        && $request->getMethod() === Method::POST
+        && $request->headers()->get('Idempotency-Key') === 'refund-operation-id'
+        && ! array_key_exists('idempotency_key', $request->body()->all()));
+});
 
 it('sends invoice refund data with idempotency only in the header', function () {
     $mockClient = new MockClient([
@@ -78,7 +98,11 @@ it('hydrates refund responses for created replayed and pending requests', functi
         ->and($refund->provider_reference)->toBe($refundStatus === 'pending' ? null : 'provider-refund-id')
         ->and($refund->refunded_at?->format(DateTimeInterface::ATOM))->toBe(
             $refundStatus === 'pending' ? null : '2026-08-01T12:00:00+00:00'
-        );
+        )
+        ->and($refund->created_at)->toBeInstanceOf(DateTimeImmutable::class)
+        ->and($refund->created_at->format(DateTimeInterface::ATOM))->toBe('2026-08-01T11:59:00+00:00')
+        ->and($refund->updated_at)->toBeInstanceOf(DateTimeImmutable::class)
+        ->and($refund->updated_at->format(DateTimeInterface::ATOM))->toBe('2026-08-01T12:00:00+00:00');
 })->with([
     'created' => [201, 'succeeded'],
     'replayed' => [200, 'succeeded'],

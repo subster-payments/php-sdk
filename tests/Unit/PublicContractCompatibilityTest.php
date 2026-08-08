@@ -2,16 +2,21 @@
 
 declare(strict_types=1);
 
+use Subster\PhpSdk\Concerns\Collection;
 use Subster\PhpSdk\DataObjects\ChangeSubscriptionPlanData;
 use Subster\PhpSdk\DataObjects\CheckoutSessionData;
 use Subster\PhpSdk\DataObjects\CheckoutSessionStatusData;
 use Subster\PhpSdk\DataObjects\CreateBillingPortalSessionData;
 use Subster\PhpSdk\DataObjects\CreateCheckoutSessionData;
+use Subster\PhpSdk\DataObjects\InvoiceCustomerData;
+use Subster\PhpSdk\DataObjects\InvoiceData;
 use Subster\PhpSdk\DataObjects\SubscriptionPlanChangeData;
 use Subster\PhpSdk\Enums\BillingPortalFlow;
 use Subster\PhpSdk\Enums\CheckoutPaymentAttemptState;
 use Subster\PhpSdk\Enums\CheckoutPaymentState;
 use Subster\PhpSdk\Enums\CheckoutSessionStatus;
+use Subster\PhpSdk\Enums\Currency;
+use Subster\PhpSdk\Enums\InvoiceStatus;
 use Subster\PhpSdk\Enums\PaymentStrategy;
 use Subster\PhpSdk\Enums\SubscriptionPlanChangeMode;
 use Subster\PhpSdk\Enums\SubscriptionPlanChangeProrationBehavior;
@@ -52,6 +57,19 @@ it('keeps legacy positional constructor calls compatible', function (): void {
         $effectiveAt,
         SubscriptionPlanChangeProrationBehavior::None,
     );
+    $invoice = new InvoiceData(
+        'invoice-id',
+        InvoiceStatus::Paid,
+        100.0,
+        Currency::RUB,
+        null,
+        $effectiveAt,
+        $effectiveAt,
+        $effectiveAt,
+        new InvoiceCustomerData('customer-id', null, 'customer@example.ru', $effectiveAt, $effectiveAt),
+        null,
+        Collection::make([]),
+    );
 
     expect($checkoutRequest->payment_strategy)->toBeNull()
         ->and($checkoutRequest->idempotency_key)->toBeNull()
@@ -71,7 +89,12 @@ it('keeps legacy positional constructor calls compatible', function (): void {
         ->and($planChange->payment_state)->toBe(CheckoutPaymentState::RequiresPayment)
         ->and($planChange->payment_attempt_state)->toBeNull()
         ->and($planChange->currency)->toBeNull()
-        ->and($planChange->applied)->toBeFalse();
+        ->and($planChange->applied)->toBeFalse()
+        ->and($invoice->refund_status)->toBeNull()
+        ->and($invoice->has_pending_refund)->toBeFalse()
+        ->and($invoice->refunded_amount)->toBe(0.0)
+        ->and($invoice->refundable_amount)->toBeNull()
+        ->and($invoice->refunds)->toBeNull();
 
     $legacyUrlType = (new ReflectionProperty(CheckoutSessionData::class, 'url'))->getType();
 
@@ -121,6 +144,27 @@ it('keeps legacy named constructor calls compatible', function (): void {
             effective_at: $effectiveAt,
             proration_behavior: null,
         ))->toBeInstanceOf(SubscriptionPlanChangeData::class);
+
+    $invoice = new InvoiceData(
+        id: 'invoice-id',
+        status: InvoiceStatus::Paid,
+        amount: 100.0,
+        currency: Currency::RUB,
+        description: null,
+        paid_at: $effectiveAt,
+        created_at: $effectiveAt,
+        updated_at: $effectiveAt,
+        customer: new InvoiceCustomerData('customer-id', null, 'customer@example.ru', $effectiveAt, $effectiveAt),
+        subscription: null,
+        items: Collection::make([]),
+    );
+
+    expect($invoice)
+        ->refund_status->toBeNull()
+        ->has_pending_refund->toBeFalse()
+        ->refunded_amount->toBe(0.0)
+        ->refundable_amount->toBeNull()
+        ->refunds->toBeNull();
 });
 
 it('hydrates new request enums from wire values', function (): void {

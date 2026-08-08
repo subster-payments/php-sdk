@@ -447,7 +447,7 @@ if ($refund->status === RefundStatus::Pending) {
 
 Чтобы вернуть весь доступный остаток, не передавайте `amount`. Ответы `200`, `201` и `202` гидрируются в `RefundData`; ошибки API (`409`, `422` и другие) выбрасывают Saloon `RequestException`.
 
-Список счетов содержит nullable агрегаты `$invoice->refund_status`, `$invoice->refunded_amount`, `$invoice->refundable_amount`, `$invoice->has_pending_refund` и коллекцию `$invoice->refunds`. Они остаются совместимыми со старым API: отсутствующие поля гидрируются как `null`, `0.0` или `false`.
+Ответ списка счетов может не содержать агрегаты возвратов. В этом случае SDK безопасно гидрирует `$invoice->refund_status`, `$invoice->refundable_amount` и `$invoice->refunds` как `null`, а `$invoice->has_pending_refund` и `$invoice->refunded_amount` — как `false` и `0.0` соответственно.
 
 ## Ошибки и полный API-контракт
 
