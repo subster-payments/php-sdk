@@ -8,6 +8,7 @@ use DateTimeImmutable;
 use Subster\PhpSdk\Concerns\Collection;
 use Subster\PhpSdk\Concerns\Data;
 use Subster\PhpSdk\Enums\Currency;
+use Subster\PhpSdk\Enums\InvoiceRefundStatus;
 use Subster\PhpSdk\Enums\InvoiceStatus;
 use Subster\PhpSdk\Support\DateTimeNormalizer;
 
@@ -28,6 +29,11 @@ class InvoiceData extends Data
         public readonly float $subtotal_amount = 0.0,
         public readonly float $discount_amount = 0.0,
         public readonly ?InvoiceDiscountData $discount = null,
+        public readonly ?InvoiceRefundStatus $refund_status = null,
+        public readonly bool $has_pending_refund = false,
+        public readonly float $refunded_amount = 0.0,
+        public readonly ?float $refundable_amount = null,
+        public readonly ?Collection $refunds = null,
     ) {}
 
     public static function fromSaloon(array $response): self
@@ -55,6 +61,18 @@ class InvoiceData extends Data
             discount_amount: isset($response['discount_amount']) ? floatval($response['discount_amount']) : 0.0,
             discount: isset($response['discount']) && is_array($response['discount'])
                 ? InvoiceDiscountData::fromSaloon($response['discount'])
+                : null,
+            refund_status: isset($response['refund_status'])
+                ? InvoiceRefundStatus::from(strval($response['refund_status']))
+                : null,
+            has_pending_refund: boolval($response['has_pending_refund'] ?? false),
+            refunded_amount: isset($response['refunded_amount']) ? floatval($response['refunded_amount']) : 0.0,
+            refundable_amount: isset($response['refundable_amount']) ? floatval($response['refundable_amount']) : null,
+            refunds: isset($response['refunds']) && is_array($response['refunds'])
+                ? Collection::make(
+                    $response['refunds'],
+                    fn (array $refund): RefundData => RefundData::fromSaloon($refund),
+                )
                 : null,
         );
     }

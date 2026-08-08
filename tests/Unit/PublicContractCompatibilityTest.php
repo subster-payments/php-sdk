@@ -174,5 +174,6 @@ it('matches finite API values', function (): void {
         'subscription.on_grace_period',
         'subscription.resumed',
         'subscription.ended',
+        'refund.succeeded',
     ]);
 });

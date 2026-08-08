@@ -2,6 +2,13 @@
 
 All notable changes to `subster-payments/php-sdk` will be documented in this file.
 
+## v2.4.0 - 2026-08-08
+
+- Added `invoices()->refund(string $invoice, CreateInvoiceRefundData $data): RefundData` for full and partial refunds.
+- Added typed refund status and invoice refund summary enums, refund DTO hydration, and `refund.succeeded` webhook event support.
+- Added backward-compatible nullable refund aggregates and refund history to `InvoiceData`.
+- Sends refund idempotency keys only through the `Idempotency-Key` header.
+
 ## v2.3.0 - 2026-07-20
 
 - Added `checkoutSessions()->cancel(string $session): CheckoutSessionStatusData` for idempotent cancellation of unpaid checkout sessions.

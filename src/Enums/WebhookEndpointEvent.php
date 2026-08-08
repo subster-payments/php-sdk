@@ -15,4 +15,5 @@ enum WebhookEndpointEvent: string
     case SubscriptionOnGracePeriod = 'subscription.on_grace_period';
     case SubscriptionResumed = 'subscription.resumed';
     case SubscriptionEnded = 'subscription.ended';
+    case RefundSucceeded = 'refund.succeeded';
 }

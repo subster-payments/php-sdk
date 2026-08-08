@@ -19,7 +19,7 @@
 ## Установка
 
 ```bash
-composer require subster-payments/php-sdk:^2.2
+composer require subster-payments/php-sdk:^2.4
 ```
 
 ### Переход со старого имени пакета
@@ -28,7 +28,7 @@ composer require subster-payments/php-sdk:^2.2
 
 ```bash
 composer remove subster/php-sdk --no-update
-composer require subster-payments/php-sdk:^2.2 -W
+composer require subster-payments/php-sdk:^2.4 -W
 ```
 
 Namespace SDK остается прежним: `Subster\PhpSdk`.
@@ -422,6 +422,32 @@ if ($invoice->discount) {
 ```
 
 Позиции счета содержат nullable поле `$item->pricing_model`. Для usage-based счетов metadata может включать детали backend meter и snapshot использования, по которому был сформирован счет.
+
+### Возвраты
+
+Полный или частичный возврат создаётся для оплаченного счета. Один ключ идемпотентности всегда должен описывать одну и ту же операцию; SDK передаёт его только в заголовке `Idempotency-Key`.
+
+```php
+use Subster\PhpSdk\DataObjects\CreateInvoiceRefundData;
+use Subster\PhpSdk\Enums\RefundStatus;
+
+$refund = $subster->invoices()->refund(
+    'invoice-id',
+    new CreateInvoiceRefundData(
+        amount: 500.00,
+        reason: 'Возврат по обращению клиента',
+        idempotencyKey: 'refund:local-operation-id',
+    ),
+);
+
+if ($refund->status === RefundStatus::Pending) {
+    // Результат платёжного провайдера пока неизвестен: повторяйте тот же запрос с тем же ключом.
+}
+```
+
+Чтобы вернуть весь доступный остаток, не передавайте `amount`. Ответы `200`, `201` и `202` гидрируются в `RefundData`; ошибки API (`409`, `422` и другие) выбрасывают Saloon `RequestException`.
+
+Список счетов содержит nullable агрегаты `$invoice->refund_status`, `$invoice->refunded_amount`, `$invoice->refundable_amount`, `$invoice->has_pending_refund` и коллекцию `$invoice->refunds`. Они остаются совместимыми со старым API: отсутствующие поля гидрируются как `null`, `0.0` или `false`.
 
 ## Ошибки и полный API-контракт
 

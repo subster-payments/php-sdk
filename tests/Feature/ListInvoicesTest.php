@@ -18,9 +18,11 @@ use Subster\PhpSdk\DataObjects\ListInvoicesData;
 use Subster\PhpSdk\Enums\CouponDiscountType;
 use Subster\PhpSdk\Enums\CouponDuration;
 use Subster\PhpSdk\Enums\Currency;
+use Subster\PhpSdk\Enums\InvoiceRefundStatus;
 use Subster\PhpSdk\Enums\InvoiceStatus;
 use Subster\PhpSdk\Enums\PlanType;
 use Subster\PhpSdk\Enums\PricingModel;
+use Subster\PhpSdk\Enums\RefundStatus;
 use Subster\PhpSdk\Enums\SubscriptionStatus;
 use Subster\PhpSdk\Requests\ListInvoicesRequest;
 use Subster\PhpSdk\SubsterConnector;
@@ -114,6 +116,12 @@ it('returns invoice list data from a mocked Saloon response', function () {
         ->and($subscriptionInvoice->amount)->toBe(1800.0)
         ->and($subscriptionInvoice->subtotal_amount)->toBe(2000.0)
         ->and($subscriptionInvoice->discount_amount)->toBe(200.0)
+        ->and($subscriptionInvoice->refund_status)->toBe(InvoiceRefundStatus::Partial)
+        ->and($subscriptionInvoice->has_pending_refund)->toBeFalse()
+        ->and($subscriptionInvoice->refunded_amount)->toBe(500.0)
+        ->and($subscriptionInvoice->refundable_amount)->toBe(1300.0)
+        ->and($subscriptionInvoice->refunds?->items)->toHaveCount(1)
+        ->and($subscriptionInvoice->refunds?->items[0]->status)->toBe(RefundStatus::Succeeded)
         ->and($subscriptionInvoice->currency)->toBe(Currency::RUB)
         ->and($subscriptionInvoice->description)->toBe('Subscription renewal')
         ->and($subscriptionInvoice->paid_at)->toBeInstanceOf(DateTimeImmutable::class)
@@ -188,6 +196,11 @@ it('falls back when invoice response does not contain discount fields', function
         $response['data'][0]['subtotal_amount'],
         $response['data'][0]['discount_amount'],
         $response['data'][0]['discount'],
+        $response['data'][0]['refund_status'],
+        $response['data'][0]['has_pending_refund'],
+        $response['data'][0]['refunded_amount'],
+        $response['data'][0]['refundable_amount'],
+        $response['data'][0]['refunds'],
     );
 
     $mockClient = new MockClient([
@@ -204,7 +217,12 @@ it('falls back when invoice response does not contain discount fields', function
         ->amount->toBe(1800.0)
         ->subtotal_amount->toBe(1800.0)
         ->discount_amount->toBe(0.0)
-        ->discount->toBeNull();
+        ->discount->toBeNull()
+        ->refund_status->toBeNull()
+        ->has_pending_refund->toBeFalse()
+        ->refunded_amount->toBe(0.0)
+        ->refundable_amount->toBeNull()
+        ->refunds->toBeNull();
 });
 
 it('hydrates nullable invoice customer email', function () {
@@ -277,6 +295,28 @@ function invoiceListResponse(): array
                     'discount_amount' => 200,
                     'total_amount' => 1800,
                     'currency' => 'RUB',
+                ],
+                'refund_status' => 'partial',
+                'has_pending_refund' => false,
+                'refunded_amount' => 500,
+                'refundable_amount' => 1300,
+                'refunds' => [
+                    [
+                        'id' => 'refund-id',
+                        'status' => 'succeeded',
+                        'source' => 'api',
+                        'invoice' => 'invoice-subscription-id',
+                        'charge' => 'charge-id',
+                        'amount' => 500,
+                        'currency' => 'RUB',
+                        'reason' => 'Customer request',
+                        'idempotency_key' => 'refund-operation-id',
+                        'provider_reference' => 'provider-refund-id',
+                        'failure_message' => null,
+                        'refunded_at' => '2026-01-17T10:30:00+00:00',
+                        'created_at' => '2026-01-17T10:29:00+00:00',
+                        'updated_at' => '2026-01-17T10:30:00+00:00',
+                    ],
                 ],
                 'currency' => 'RUB',
                 'description' => 'Subscription renewal',
