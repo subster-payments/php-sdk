@@ -2,6 +2,10 @@
 
 All notable changes to `subster-payments/php-sdk` will be documented in this file.
 
+## v2.4.1 - 2026-08-10
+
+- Fixed `CreateInvoiceRefundData::from()` hydration for raw payloads that use the canonical `idempotency_key` field while preserving the existing camel-case constructor API.
+
 ## v2.4.0 - 2026-08-08
 
 - Added `invoices()->refund(string $invoice, CreateInvoiceRefundData $data): RefundData` for full and partial refunds.
