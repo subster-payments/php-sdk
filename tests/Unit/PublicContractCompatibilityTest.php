@@ -75,6 +75,7 @@ it('keeps legacy positional constructor calls compatible', function (): void {
         ->and($checkoutRequest->idempotency_key)->toBeNull()
         ->and($planChangeRequest->payment_strategy)->toBeNull()
         ->and($planChangeRequest->idempotency_key)->toBeNull()
+        ->and($planChangeRequest->quote)->toBeNull()
         ->and($portalRequest->flow)->toBeNull()
         ->and($checkout->payment_state)->toBe(CheckoutPaymentState::RequiresPayment)
         ->and($checkout->checkout_url)->toBeNull()

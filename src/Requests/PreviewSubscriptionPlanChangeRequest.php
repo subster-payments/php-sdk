@@ -10,11 +10,11 @@ use Saloon\Http\Request;
 use Saloon\Http\Response;
 use Saloon\Traits\Body\HasJsonBody;
 use Saloon\Traits\Request\HasConnector;
-use Subster\PhpSdk\DataObjects\ChangeSubscriptionPlanData;
-use Subster\PhpSdk\DataObjects\SubscriptionPlanChangeData;
+use Subster\PhpSdk\DataObjects\PreviewSubscriptionPlanChangeData;
+use Subster\PhpSdk\DataObjects\SubscriptionPlanChangeQuoteData;
 use Subster\PhpSdk\SubsterConnector;
 
-class ChangeSubscriptionPlanRequest extends Request implements HasBody
+class PreviewSubscriptionPlanChangeRequest extends Request implements HasBody
 {
     use HasConnector;
     use HasJsonBody;
@@ -25,35 +25,25 @@ class ChangeSubscriptionPlanRequest extends Request implements HasBody
 
     public function __construct(
         public readonly string $subscription,
-        public readonly ChangeSubscriptionPlanData $data,
+        public readonly PreviewSubscriptionPlanChangeData $data,
     ) {}
 
     public function resolveEndpoint(): string
     {
-        return 'subscriptions/'.$this->subscription.'/change-plan';
+        return 'subscriptions/'.$this->subscription.'/plan-change-quotes';
     }
 
     protected function defaultBody(): array
     {
         return [
             'plan' => $this->data->plan,
-            ...($this->data->success_url ? ['success_url' => $this->data->success_url] : []),
-            ...($this->data->cancel_url ? ['cancel_url' => $this->data->cancel_url] : []),
             ...($this->data->proration_behavior !== null ? ['proration_behavior' => $this->data->proration_behavior->value] : []),
             ...($this->data->payment_strategy !== null ? ['payment_strategy' => $this->data->payment_strategy->value] : []),
-            ...($this->data->quote !== null ? ['quote' => $this->data->quote] : []),
         ];
     }
 
-    protected function defaultHeaders(): array
+    public function createDtoFromResponse(Response $response): SubscriptionPlanChangeQuoteData
     {
-        return $this->data->idempotency_key !== null
-            ? ['Idempotency-Key' => $this->data->idempotency_key]
-            : [];
-    }
-
-    public function createDtoFromResponse(Response $response): SubscriptionPlanChangeData
-    {
-        return SubscriptionPlanChangeData::fromSaloon($response->json());
+        return SubscriptionPlanChangeQuoteData::fromSaloon($response->json());
     }
 }

@@ -2,6 +2,13 @@
 
 All notable changes to `subster-payments/php-sdk` will be documented in this file.
 
+## v2.5.0 - 2026-08-31
+
+- Added `subscriptions()->previewPlanChange()` with typed preview request and persisted quote response data objects.
+- Added optional `quote` confirmation support to `ChangeSubscriptionPlanData` and the `change-plan` request body.
+- Added native `DateTimeImmutable` quote timestamps plus backed enums for mode, proration behavior, payment strategy, and currency.
+- Preserved old positional and named `ChangeSubscriptionPlanData` constructor calls by appending the new nullable field.
+
 ## v2.4.1 - 2026-08-10
 
 - Fixed `CreateInvoiceRefundData::from()` hydration for raw payloads that use the canonical `idempotency_key` field while preserving the existing camel-case constructor API.

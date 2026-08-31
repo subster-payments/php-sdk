@@ -199,3 +199,40 @@ it('sends one click plan change strategy with an idempotency header', function (
         && $request->body()->all()['payment_strategy'] === PaymentStrategy::DefaultThenCheckout->value
         && $request->headers()->get('Idempotency-Key') === 'upgrade-1');
 });
+
+it('sends a confirmed quote in the exact plan change payload', function (): void {
+    $mockClient = new MockClient([
+        ChangeSubscriptionPlanRequest::class => MockResponse::make([
+            'id' => 'change-id',
+            'mode' => 'checkout',
+            'checkout_session' => 'checkout-session-id',
+            'checkout_url' => 'https://subster.test/checkout/checkout-session-id',
+            'amount_due' => 4750,
+            'credit_amount' => 250,
+            'effective_at' => '2026-01-16T00:01:00+00:00',
+        ]),
+    ]);
+    $connector = new SubsterConnector('test-token', 'https://subster.test/api/v1/');
+    $connector->withMockClient($mockClient);
+
+    $connector->subscriptions()->changePlan('subscription-id', new ChangeSubscriptionPlanData(
+        plan: 'target-plan-id',
+        success_url: 'https://example.ru/success',
+        cancel_url: 'https://example.ru/cancel',
+        proration_behavior: SubscriptionPlanChangeProrationBehavior::Prorate,
+        payment_strategy: PaymentStrategy::HostedCheckout,
+        idempotency_key: 'confirm-quote-1',
+        quote: 'quote-id',
+    ));
+
+    $mockClient->assertSent(fn (Request $request): bool => $request instanceof ChangeSubscriptionPlanRequest
+        && $request->body()->all() === [
+            'plan' => 'target-plan-id',
+            'success_url' => 'https://example.ru/success',
+            'cancel_url' => 'https://example.ru/cancel',
+            'proration_behavior' => 'prorate',
+            'payment_strategy' => 'hosted_checkout',
+            'quote' => 'quote-id',
+        ]
+        && $request->headers()->get('Idempotency-Key') === 'confirm-quote-1');
+});

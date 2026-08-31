@@ -303,17 +303,30 @@ $portalSession = $subster->billingPortalSessions()->create(
 
 ### Смена тарифа подписки
 
-`changePlan` меняет тариф подписки. Если требуется доплата, Subster вернет checkout URL.
+Перед сменой тарифа вызовите `previewPlanChange`: Subster вернет точную котировку, действующую 15 минут. Покажите сумму пользователю и передайте ID котировки в отдельный подтверждающий `changePlan` с устойчивым ключом идемпотентности.
 
 ```php
 use Subster\PhpSdk\DataObjects\ChangeSubscriptionPlanData;
+use Subster\PhpSdk\DataObjects\PreviewSubscriptionPlanChangeData;
 use Subster\PhpSdk\Enums\SubscriptionPlanChangeMode;
 use Subster\PhpSdk\Enums\PaymentStrategy;
+
+$quote = $subster->subscriptions()->previewPlanChange(
+    'subscription-id',
+    PreviewSubscriptionPlanChangeData::from([
+        'plan' => 'target-plan-id',
+        'payment_strategy' => PaymentStrategy::DefaultThenCheckout,
+    ])
+);
+
+// Покажите $quote->amount_due, $quote->credit_amount, $quote->currency,
+// $quote->target_recurring_amount, $quote->effective_at и $quote->expires_at.
 
 $change = $subster->subscriptions()->changePlan(
     'subscription-id',
     ChangeSubscriptionPlanData::from([
         'plan' => 'target-plan-id',
+        'quote' => $quote->id,
         'success_url' => 'https://example.ru/billing/success',
         'cancel_url' => 'https://example.ru/billing/cancel',
         'payment_strategy' => PaymentStrategy::DefaultThenCheckout,
@@ -328,16 +341,17 @@ if ($change->applied) {
 }
 ```
 
+Если подтверждение вернуло `quote_expired` или `quote_stale`, запросите новую котировку, снова покажите ее пользователю и дождитесь нового явного подтверждения. Не повторяйте оплату автоматически. Для безопасного повтора неоднозначного подтверждения используйте тот же ID котировки, те же поля и тот же `idempotency_key`.
+
 По умолчанию Subster делает перерасчет при немедленном upgrade и учитывает неиспользованное время текущего периода. Для тарифов-пакетов, где клиент должен оплатить полную стоимость нового тарифа, передайте `SubscriptionPlanChangeProrationBehavior::None`.
 
 ```php
 use Subster\PhpSdk\Enums\SubscriptionPlanChangeProrationBehavior;
 
-$change = $subster->subscriptions()->changePlan(
+$quote = $subster->subscriptions()->previewPlanChange(
     'subscription-id',
-    ChangeSubscriptionPlanData::from([
+    PreviewSubscriptionPlanChangeData::from([
         'plan' => 'larger-package-plan-id',
-        'success_url' => 'https://example.ru/billing/success',
         'proration_behavior' => SubscriptionPlanChangeProrationBehavior::None,
     ])
 );
